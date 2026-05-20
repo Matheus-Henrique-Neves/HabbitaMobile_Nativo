@@ -6,25 +6,25 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#F5F5F5"
-    android:backgroundTint="#FFFFFF"
-    tools:context=".MainActivity">
+    android:padding="16dp"
+    tools:context=".Profile">
+
     <ImageView
         android:id="@+id/profileImage"
         android:layout_width="80dp"
         android:layout_height="80dp"
-        android:layout_marginTop="48dp"
+        android:layout_marginTop="32dp"
         android:src="@drawable/ic_profile_placeholder"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
     <TextView
         android:id="@+id/userName"
         android:layout_width="wrap_content"
-
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
-        android:drawableTint="#FFFFFF"
-        android:text="Testando Testador Teste Testado"
+        android:text="Nome do Usuário"
         android:textAlignment="center"
         android:textColor="#0F0F0F"
         android:textSize="18sp"
@@ -32,36 +32,36 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/profileImage" />
+
     <TextView
         android:id="@+id/userEmail"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
-        android:text="Testando2@email.com"
+        android:text="usuario@email.com"
         android:textAlignment="center"
         android:textColor="#000000"
         android:textSize="14sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/userName" />
+
     <androidx.cardview.widget.CardView
         android:id="@+id/menuCard"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="24dp"
         android:layout_marginTop="32dp"
-        android:layout_marginEnd="24dp"
         app:cardCornerRadius="16dp"
         app:cardElevation="4dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/userEmail">
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="8dp">
-            <!-- Informações Pessoais -->
+            android:orientation="vertical">
+
             <LinearLayout
                 android:id="@+id/menuPersonalInfo"
                 android:layout_width="match_parent"
@@ -69,11 +69,13 @@
                 android:background="?attr/selectableItemBackground"
                 android:orientation="horizontal"
                 android:padding="16dp">
+
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
                     android:src="@drawable/ic_person"
                     app:tint="#000000" />
+
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -89,10 +91,12 @@
                     android:src="@drawable/ic_chevron_right"
                     app:tint="#999999" />
             </LinearLayout>
+
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:background="#EEEEEE" />
+
             <LinearLayout
                 android:id="@+id/menuEmailPassword"
                 android:layout_width="match_parent"
@@ -100,11 +104,13 @@
                 android:background="?attr/selectableItemBackground"
                 android:orientation="horizontal"
                 android:padding="16dp">
+
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
                     android:src="@drawable/ic_email"
                     app:tint="#000000" />
+
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -113,16 +119,19 @@
                     android:text="Email &amp; Senha"
                     android:textColor="#333333"
                     android:textSize="16sp" />
+
                 <ImageView
                     android:layout_width="20dp"
                     android:layout_height="20dp"
                     android:src="@drawable/ic_chevron_right"
                     app:tint="#999999" />
             </LinearLayout>
+
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:background="#EEEEEE" />
+
             <LinearLayout
                 android:id="@+id/menuNotifications"
                 android:layout_width="match_parent"
@@ -130,30 +139,34 @@
                 android:background="?attr/selectableItemBackground"
                 android:orientation="horizontal"
                 android:padding="16dp">
+
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
                     android:src="@drawable/ic_notifications"
                     app:tint="#000000" />
+
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
                     android:layout_weight="1"
                     android:text="Notificações"
-
                     android:textColor="#333333"
                     android:textSize="16sp" />
+
                 <ImageView
                     android:layout_width="20dp"
                     android:layout_height="20dp"
                     android:src="@drawable/ic_chevron_right"
                     app:tint="#999999" />
             </LinearLayout>
+
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:background="#EEEEEE" />
+
             <LinearLayout
                 android:id="@+id/menuHelp"
                 android:layout_width="match_parent"
@@ -161,11 +174,13 @@
                 android:background="?attr/selectableItemBackground"
                 android:orientation="horizontal"
                 android:padding="16dp">
+
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
                     android:src="@drawable/ic_help"
                     app:tint="#000000" />
+
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -174,6 +189,7 @@
                     android:text="Ajuda"
                     android:textColor="#333333"
                     android:textSize="16sp" />
+
                 <ImageView
                     android:layout_width="20dp"
                     android:layout_height="20dp"
@@ -182,43 +198,37 @@
             </LinearLayout>
         </LinearLayout>
     </androidx.cardview.widget.CardView>
-    <com.google.android.material.button.MaterialButton
+
+    <Button
         android:id="@+id/btnRegisterProperty"
-        android:layout_width="156dp"
+        android:layout_width="0dp"
         android:layout_height="50dp"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="36dp"
-        android:layout_marginEnd="24dp"
+        android:layout_marginTop="32dp"
+        android:layout_marginEnd="8dp"
+        android:backgroundTint="#000000"
         android:text="Cadastrar Imóvel"
         android:textAllCaps="false"
         android:textColor="#FFFFFF"
         android:textSize="14sp"
-        app:backgroundTint="#000000"
-        app:cornerRadius="28dp"
-        app:iconGravity="textStart"
-        app:iconPadding="12dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.072"
+        app:cornerRadius="25dp"
+        app:layout_constraintEnd_toStartOf="@+id/btnLogout"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/menuCard" />
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnRegisterProperty2"
-        android:layout_width="156dp"
+    <Button
+        android:id="@+id/btnLogout"
+        android:layout_width="0dp"
         android:layout_height="50dp"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="36dp"
-        android:layout_marginEnd="24dp"
+        android:layout_marginTop="32dp"
+        android:layout_marginStart="8dp"
+        android:backgroundTint="#ED2727"
         android:text="Sair"
         android:textAllCaps="false"
         android:textColor="#FFFFFF"
         android:textSize="14sp"
-        app:backgroundTint="#ED2727"
-        app:cornerRadius="28dp"
-        app:iconGravity="textStart"
-        app:iconPadding="12dp"
+        app:cornerRadius="25dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.961"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/btnRegisterProperty"
         app:layout_constraintTop_toBottomOf="@+id/menuCard" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

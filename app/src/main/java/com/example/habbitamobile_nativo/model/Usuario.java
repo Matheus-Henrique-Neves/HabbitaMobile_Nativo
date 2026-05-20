@@ -5,13 +5,23 @@ public class Usuario {
     private String email;
     private String senha;
 
-    //Para gerar getters and setters ALT + Insert
+    // Construtores
+    public Usuario() {
+        // Construtor vazio
+    }
 
     public Usuario(String email, String senha) {
-        this.email = email;
+        this.email = email != null ? email.trim().toLowerCase() : null;
         this.senha = senha;
     }
 
+    public Usuario(int id, String email, String senha) {
+        this.id = id;
+        this.email = email != null ? email.trim().toLowerCase() : null;
+        this.senha = senha;
+    }
+
+    // Getters e Setters
     public int getId() {
         return id;
     }
@@ -33,6 +43,12 @@ public class Usuario {
     }
 
     public void setEmail(String email) {
-        this.email = email;
+        this.email = email != null ? email.trim().toLowerCase() : null;
+    }
+
+    // Método auxiliar para validação
+    public boolean isValid() {
+        return email != null && !email.isEmpty() &&
+                senha != null && !senha.isEmpty();
     }
 }
