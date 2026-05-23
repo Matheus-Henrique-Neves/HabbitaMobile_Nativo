@@ -87,6 +87,20 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/btnLogin" />
 
+    <Button
+        android:id="@+id/btnBiometria"
+        android:layout_width="0dp"
+        android:layout_height="60dp"
+        android:layout_marginTop="16dp"
+        android:backgroundTint="#000000"
+        android:text="Entrar com Digital"
+        android:textSize="20sp"
+        android:visibility="gone"
+        app:cornerRadius="12sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btnCadastro" />
+
     <TextView
         android:id="@+id/lblMensagem"
         android:layout_width="wrap_content"
@@ -97,6 +111,6 @@
         android:visibility="visible"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/btnCadastro" />
+        app:layout_constraintTop_toBottomOf="@+id/btnBiometria" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
