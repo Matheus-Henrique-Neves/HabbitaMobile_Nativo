@@ -1,54 +1,35 @@
 package com.example.habbitamobile_nativo.model;
 
 public class Usuario {
+
     private int id;
+    private String nome;
     private String email;
     private String senha;
 
-    // Construtores
-    public Usuario() {
-        // Construtor vazio
-    }
+    public Usuario() {}
 
-    public Usuario(String email, String senha) {
+    public Usuario(String nome, String email, String senha) {
+        this.nome = nome != null ? nome.trim() : null;
         this.email = email != null ? email.trim().toLowerCase() : null;
         this.senha = senha;
     }
 
-    public Usuario(int id, String email, String senha) {
-        this.id = id;
-        this.email = email != null ? email.trim().toLowerCase() : null;
-        this.senha = senha;
-    }
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
 
-    // Getters e Setters
-    public int getId() {
-        return id;
-    }
+    public String getNome() { return nome; }
+    public void setNome(String nome) { this.nome = nome != null ? nome.trim() : null; }
 
-    public void setId(int id) {
-        this.id = id;
-    }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email != null ? email.trim().toLowerCase() : null; }
 
-    public String getSenha() {
-        return senha;
-    }
+    public String getSenha() { return senha; }
+    public void setSenha(String senha) { this.senha = senha; }
 
-    public void setSenha(String senha) {
-        this.senha = senha;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email != null ? email.trim().toLowerCase() : null;
-    }
-
-    // Método auxiliar para validação
     public boolean isValid() {
-        return email != null && !email.isEmpty() &&
+        return nome != null && !nome.isEmpty() &&
+                email != null && !email.isEmpty() &&
                 senha != null && !senha.isEmpty();
     }
 }

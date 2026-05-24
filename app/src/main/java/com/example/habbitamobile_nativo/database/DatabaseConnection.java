@@ -7,7 +7,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 public class DatabaseConnection extends SQLiteOpenHelper {
 
     private static final String DB_NAME = "app_login.db";
-    private static final int DB_VERSION = 3;
+    private static final int DB_VERSION = 4;
     public static final String TABELA_USUARIO = "usuarios";
 
     public DatabaseConnection(Context context) {
@@ -18,6 +18,7 @@ public class DatabaseConnection extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
         String sql = "CREATE TABLE " + TABELA_USUARIO + " (" +
                 "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "nome TEXT NOT NULL," +
                 "email TEXT UNIQUE NOT NULL," +
                 "senha TEXT NOT NULL," +
                 "data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP)";

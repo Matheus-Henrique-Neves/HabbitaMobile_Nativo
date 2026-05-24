@@ -14,6 +14,7 @@ import com.google.android.material.textfield.TextInputEditText;
 
 public class RegisterUser extends AppCompatActivity {
 
+    private TextInputEditText edtNome;
     private TextInputEditText edtEmail;
     private TextInputEditText edtSenha;
     private TextInputEditText edtConfirmarSenha;
@@ -32,6 +33,7 @@ public class RegisterUser extends AppCompatActivity {
     }
 
     private void initViews() {
+        edtNome = findViewById(R.id.edtNomeCadastro);
         edtEmail = findViewById(R.id.edtEmailCadastro);
         edtSenha = findViewById(R.id.edtSenhaCadastro);
         edtConfirmarSenha = findViewById(R.id.edtConfirmarSenhaCadastro);
@@ -50,11 +52,12 @@ public class RegisterUser extends AppCompatActivity {
     private void realizarCadastro() {
         esconderErro();
 
+        String nome = edtNome.getText().toString().trim();
         String email = edtEmail.getText().toString().trim().toLowerCase();
         String senha = edtSenha.getText().toString();
         String confirmar = edtConfirmarSenha.getText().toString();
 
-        if (!validarCampos(email, senha, confirmar)) {
+        if (!validarCampos(nome, email, senha, confirmar)) {
             return;
         }
 
@@ -65,7 +68,7 @@ public class RegisterUser extends AppCompatActivity {
         }
 
         String senhaHash = SenhaUtil.hash(senha);
-        Usuario usuario = new Usuario(email, senhaHash);
+        Usuario usuario = new Usuario(nome, email, senhaHash);
         boolean sucesso = usuarioDAO.inserir(usuario);
 
         if (sucesso) {
@@ -76,7 +79,19 @@ public class RegisterUser extends AppCompatActivity {
         }
     }
 
-    private boolean validarCampos(String email, String senha, String confirmar) {
+    private boolean validarCampos(String nome, String email, String senha, String confirmar) {
+        if (nome.isEmpty()) {
+            mostrarErro("Digite seu nome.");
+            edtNome.requestFocus();
+            return false;
+        }
+
+        if (nome.length() < 2) {
+            mostrarErro("O nome deve ter no minimo 2 caracteres.");
+            edtNome.requestFocus();
+            return false;
+        }
+
         if (email.isEmpty()) {
             mostrarErro("Digite seu email.");
             edtEmail.requestFocus();

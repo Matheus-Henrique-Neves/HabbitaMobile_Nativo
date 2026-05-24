@@ -144,7 +144,8 @@ public class MainActivity extends AppCompatActivity {
         boolean loginValido = usuarioDAO.login(email, senha);
 
         if (loginValido) {
-            salvarPreferencias(email, senha);
+            String nome = usuarioDAO.buscarNome(email);
+            salvarPreferencias(email, senha, nome);
             abrirTelaMenu();
         } else {
             lblMensagem.setText("Email ou senha invalidos");
@@ -168,14 +169,16 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
-    private void salvarPreferencias(String email, String senha) {
+    private void salvarPreferencias(String email, String senha, String nome) {
         SharedPreferences.Editor editor = preferences.edit();
+        editor.putString("email", email);
+        editor.putString("nome", nome);
         if (checkBoxLembrar.isChecked()) {
             editor.putBoolean("lembrar_me", true);
-            editor.putString("email", email);
             editor.putString("senha", senha);
         } else {
-            editor.clear();
+            editor.putBoolean("lembrar_me", false);
+            editor.remove("senha");
         }
         editor.apply();
     }

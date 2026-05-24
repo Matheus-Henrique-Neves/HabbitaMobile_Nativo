@@ -33,14 +33,15 @@ public class UsuarioDAO {
     }
 
     public boolean inserir(Usuario usuario) {
-        if (usuario == null || usuario.getEmail() == null || usuario.getEmail().trim().isEmpty()) {
+        if (usuario == null || !usuario.isValid()) {
             return false;
         }
 
         try {
             openWritable();
             ContentValues values = new ContentValues();
-            values.put("email", usuario.getEmail().trim().toLowerCase());
+            values.put("nome", usuario.getNome());
+            values.put("email", usuario.getEmail());
             values.put("senha", usuario.getSenha());
             long resultado = db.insert(DatabaseConnection.TABELA_USUARIO, null, values);
             return resultado != -1;
@@ -68,6 +69,31 @@ public class UsuarioDAO {
             return cursor.getCount() > 0;
         } catch (Exception e) {
             return false;
+        } finally {
+            if (cursor != null) cursor.close();
+            close();
+        }
+    }
+
+    public String buscarNome(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            return "";
+        }
+
+        Cursor cursor = null;
+        try {
+            openReadable();
+            cursor = db.rawQuery(
+                    "SELECT nome FROM " + DatabaseConnection.TABELA_USUARIO +
+                            " WHERE email=?",
+                    new String[]{email.trim().toLowerCase()}
+            );
+            if (cursor.moveToFirst()) {
+                return cursor.getString(0);
+            }
+            return "";
+        } catch (Exception e) {
+            return "";
         } finally {
             if (cursor != null) cursor.close();
             close();

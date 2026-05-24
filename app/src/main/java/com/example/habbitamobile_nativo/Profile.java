@@ -49,11 +49,10 @@ public class Profile extends BaseActivity {
     }
 
     private void loadUserData() {
-        String email = preferences.getString("email", "usuario@email.com");
-        userEmail.setText(email);
-
-        String nome = email.contains("@") ? email.substring(0, email.indexOf("@")) : email;
-        userName.setText(nome);
+        String email = preferences.getString("email", "");
+        String nome = preferences.getString("nome", "");
+        userEmail.setText(email.isEmpty() ? "sem email" : email);
+        userName.setText(nome.isEmpty() ? "Usuario" : nome);
     }
 
     private void setupListeners() {
