@@ -9,9 +9,9 @@
     tools:context=".Home">
 
     <ImageView
-        android:id="@+id/imageView"
+        android:id="@+id/imgLocalizacao"
         android:layout_width="22dp"
-        android:layout_height="19dp"
+        android:layout_height="22dp"
         android:layout_marginStart="24dp"
         android:layout_marginTop="48dp"
         app:layout_constraintStart_toStartOf="parent"
@@ -19,60 +19,73 @@
         app:srcCompat="@android:drawable/ic_menu_mylocation" />
 
     <TextView
-        android:id="@+id/textView2"
-        android:layout_width="wrap_content"
+        android:id="@+id/txtBoasVindas"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="12dp"
         android:layout_marginTop="48dp"
+        android:layout_marginEnd="24dp"
         android:text="Bem-vindo(a)!"
         android:textSize="18sp"
         android:textStyle="bold"
-        app:layout_constraintStart_toEndOf="@+id/imageView"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/imgLocalizacao"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <ImageView
-        android:id="@+id/imageView2"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:layout_marginTop="48dp"
-        android:layout_marginEnd="24dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@android:drawable/ic_menu_edit" />
-
     <TextView
-        android:id="@+id/textView3"
+        android:id="@+id/txtLocalizacao"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="Indaiatuba, Brasil"
+        android:layout_marginTop="4dp"
+        android:text="Localizando..."
         android:textSize="14sp"
-        app:layout_constraintStart_toStartOf="@+id/textView2"
-        app:layout_constraintTop_toBottomOf="@+id/textView2" />
+        android:textColor="#555555"
+        app:layout_constraintStart_toStartOf="@+id/txtBoasVindas"
+        app:layout_constraintTop_toBottomOf="@+id/txtBoasVindas" />
 
     <TextView
-        android:id="@+id/textView4"
+        android:id="@+id/txtDestaque"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="Imoveis em destaque"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="@+id/txtBoasVindas"
+        app:layout_constraintTop_toBottomOf="@+id/txtLocalizacao" />
+
+    <ProgressBar
+        android:id="@+id/progressBar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="32dp"
-        android:text="Imóveis em destaque"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        app:layout_constraintStart_toStartOf="@+id/textView2"
-        app:layout_constraintTop_toBottomOf="@+id/textView3" />
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/txtDestaque" />
 
-    <Button
-        android:id="@+id/btnExplorar"
+    <TextView
+        android:id="@+id/txtErro"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="48dp"
-        android:backgroundTint="#070707"
-        android:paddingStart="32dp"
-        android:paddingEnd="32dp"
-        android:text="Explorar"
-        android:textSize="16sp"
+        android:layout_marginTop="32dp"
+        android:textColor="#B00020"
+        android:textSize="14sp"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/txtDestaque" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerImoveis"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="8dp"
+        android:paddingBottom="8dp"
+        android:clipToPadding="false"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/txtDestaque" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
