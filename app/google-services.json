@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "494986324172",
+    "project_id": "habittamobile-d6281",
+    "storage_bucket": "habittamobile-d6281.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:494986324172:android:e0f1f4297e8dffd4e1fa69",
+        "android_client_info": {
+          "package_name": "com.example.habbitamobile_nativo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCM_hV7G2mKaCNcr9GeRCk1wAYd5bUuxeI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

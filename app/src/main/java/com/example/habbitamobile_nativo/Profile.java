@@ -74,7 +74,7 @@ public class Profile extends BaseActivity {
         });
 
         btnRegisterProperty.setOnClickListener(v -> {
-            Toast.makeText(this, "Cadastrar novo imóvel", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(Profile.this, RegisterProperty.class));
         });
 
         btnLogout.setOnClickListener(v -> {
