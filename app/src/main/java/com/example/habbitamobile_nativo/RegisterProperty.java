@@ -1,7 +1,9 @@
 package com.example.habbitamobile_nativo;
 
+import android.Manifest;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
@@ -11,7 +13,10 @@ import android.widget.TextView;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -22,6 +27,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -42,11 +48,29 @@ public class RegisterProperty extends AppCompatActivity {
 
     private final List<Uri> fotosSelecionadas = new ArrayList<>();
     private FotoAdapter fotoAdapter;
+    private Uri cameraUri;
 
     private FirebaseFirestore firestore;
     private FirebaseStorage storage;
 
-    private final ActivityResultLauncher<String[]> seletorFotos =
+    private final ActivityResultLauncher<String> solicitarPermissaoCamera =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), concedida -> {
+                if (concedida) {
+                    abrirCamera();
+                } else {
+                    mostrarErro("Permissao de camera negada. Habilite nas configuracoes do dispositivo.");
+                }
+            });
+
+    private final ActivityResultLauncher<Uri> tirarFoto =
+            registerForActivityResult(new ActivityResultContracts.TakePicture(), sucesso -> {
+                if (sucesso && cameraUri != null) {
+                    fotosSelecionadas.add(cameraUri);
+                    fotoAdapter.notifyDataSetChanged();
+                }
+            });
+
+    private final ActivityResultLauncher<String[]> seletorGaleria =
             registerForActivityResult(new ActivityResultContracts.OpenMultipleDocuments(), uris -> {
                 if (uris == null || uris.isEmpty()) return;
 
@@ -109,10 +133,35 @@ public class RegisterProperty extends AppCompatActivity {
                 mostrarErro("Limite de " + MAX_FOTOS + " fotos atingido.");
                 return;
             }
-            seletorFotos.launch(new String[]{"image/*"});
+            mostrarDialogFonte();
         });
 
         btnCadastrar.setOnClickListener(v -> validarECadastrar());
+    }
+
+    private void mostrarDialogFonte() {
+        new AlertDialog.Builder(this)
+                .setTitle("Adicionar foto")
+                .setItems(new String[]{"Tirar foto", "Escolher da galeria"}, (dialog, which) -> {
+                    if (which == 0) {
+                        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                                == PackageManager.PERMISSION_GRANTED) {
+                            abrirCamera();
+                        } else {
+                            solicitarPermissaoCamera.launch(Manifest.permission.CAMERA);
+                        }
+                    } else {
+                        seletorGaleria.launch(new String[]{"image/*"});
+                    }
+                })
+                .show();
+    }
+
+    private void abrirCamera() {
+        File arquivo = new File(getCacheDir(), "foto_" + UUID.randomUUID() + ".jpg");
+        cameraUri = FileProvider.getUriForFile(
+                this, getPackageName() + ".fileprovider", arquivo);
+        tirarFoto.launch(cameraUri);
     }
 
     private void validarECadastrar() {

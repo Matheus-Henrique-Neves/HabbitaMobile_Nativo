@@ -7,7 +7,6 @@ import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -15,32 +14,20 @@ import com.example.habbitamobile_nativo.adapter.PropertyAdapter;
 import com.example.habbitamobile_nativo.model.Property;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
-
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 
 public class Explore extends BaseActivity {
-
-    private static final String URL_PROPERTIES = "https://habitta-mobile.onrender.com/properties";
 
     private RecyclerView recyclerExplore;
     private ProgressBar progressBar;
     private TextView txtErro;
     private TextInputEditText edtBusca;
     private ChipGroup chipGroup;
-    private OkHttpClient httpClient;
+    private FirebaseFirestore firestore;
 
     private final List<Property> todasPropriedades = new ArrayList<>();
     private String filtroTipo = "todos";
@@ -67,10 +54,7 @@ public class Explore extends BaseActivity {
     }
 
     private void initObjects() {
-        httpClient = new OkHttpClient.Builder()
-                .connectTimeout(30, TimeUnit.SECONDS)
-                .readTimeout(30, TimeUnit.SECONDS)
-                .build();
+        firestore = FirebaseFirestore.getInstance();
 
         edtBusca.addTextChangedListener(new TextWatcher() {
             @Override
@@ -104,50 +88,21 @@ public class Explore extends BaseActivity {
         progressBar.setVisibility(View.VISIBLE);
         txtErro.setVisibility(View.GONE);
 
-        Request request = new Request.Builder()
-                .url(URL_PROPERTIES)
-                .build();
-
-        httpClient.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                runOnUiThread(() -> {
+        firestore.collection("properties")
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    todasPropriedades.clear();
+                    for (QueryDocumentSnapshot doc : snapshot) {
+                        todasPropriedades.add(documentParaProperty(doc));
+                    }
+                    progressBar.setVisibility(View.GONE);
+                    filtrarEAtualizar();
+                })
+                .addOnFailureListener(e -> {
                     progressBar.setVisibility(View.GONE);
                     txtErro.setVisibility(View.VISIBLE);
-                    txtErro.setText("Sem conexao. Verifique sua internet.");
+                    txtErro.setText("Erro ao carregar imoveis: " + e.getMessage());
                 });
-            }
-
-            @Override
-            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                if (!response.isSuccessful() || response.body() == null) {
-                    runOnUiThread(() -> {
-                        progressBar.setVisibility(View.GONE);
-                        txtErro.setVisibility(View.VISIBLE);
-                        txtErro.setText("Erro ao buscar imoveis: " + response.code());
-                    });
-                    return;
-                }
-
-                String json = response.body().string();
-
-                try {
-                    List<Property> properties = parsearImoveis(json);
-                    runOnUiThread(() -> {
-                        progressBar.setVisibility(View.GONE);
-                        todasPropriedades.clear();
-                        todasPropriedades.addAll(properties);
-                        filtrarEAtualizar();
-                    });
-                } catch (JSONException e) {
-                    runOnUiThread(() -> {
-                        progressBar.setVisibility(View.GONE);
-                        txtErro.setVisibility(View.VISIBLE);
-                        txtErro.setText("Erro ao processar dados recebidos.");
-                    });
-                }
-            }
-        });
     }
 
     private void filtrarEAtualizar() {
@@ -182,28 +137,31 @@ public class Explore extends BaseActivity {
         return campo != null && campo.toLowerCase().contains(termo);
     }
 
-    private List<Property> parsearImoveis(String json) throws JSONException {
-        List<Property> lista = new ArrayList<>();
-        JSONArray array = new JSONArray(json);
+    private Property documentParaProperty(QueryDocumentSnapshot doc) {
+        Property p = new Property();
+        p.setId(doc.getId());
+        p.setTitle(doc.getString("title"));
+        p.setImageUrl(doc.getString("image_url"));
+        p.setAddress(doc.getString("address"));
+        p.setDescription(doc.getString("description"));
+        p.setType(doc.getString("type"));
+        p.setTransactionType(doc.getString("transactionType"));
 
-        for (int i = 0; i < array.length(); i++) {
-            JSONObject obj = array.getJSONObject(i);
-            Property p = new Property();
-            p.setId(obj.optString("id"));
-            p.setImageUrl(obj.optString("image_url"));
-            p.setTitle(obj.optString("title"));
-            p.setPrice(obj.optDouble("price", 0));
-            p.setBedrooms(obj.optInt("bedrooms", 0));
-            p.setBathrooms(obj.optInt("bathrooms", 0));
-            p.setGarages(obj.optInt("garages", 0));
-            p.setAddress(obj.optString("address"));
-            p.setDescription(obj.optString("description"));
-            p.setType(obj.optString("type"));
-            p.setTransactionType(obj.optString("transactionType"));
-            p.setArea(obj.optDouble("area", 0));
-            lista.add(p);
-        }
+        Double price = doc.getDouble("price");
+        p.setPrice(price != null ? price : 0);
 
-        return lista;
+        Double area = doc.getDouble("area");
+        p.setArea(area != null ? area : 0);
+
+        Long bedrooms = doc.getLong("bedrooms");
+        p.setBedrooms(bedrooms != null ? bedrooms.intValue() : 0);
+
+        Long bathrooms = doc.getLong("bathrooms");
+        p.setBathrooms(bathrooms != null ? bathrooms.intValue() : 0);
+
+        Long garages = doc.getLong("garages");
+        p.setGarages(garages != null ? garages.intValue() : 0);
+
+        return p;
     }
 }
