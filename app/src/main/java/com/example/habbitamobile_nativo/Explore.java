@@ -1,11 +1,13 @@
 package com.example.habbitamobile_nativo;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -14,11 +16,17 @@ import com.example.habbitamobile_nativo.adapter.PropertyAdapter;
 import com.example.habbitamobile_nativo.model.Property;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.SetOptions;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 public class Explore extends BaseActivity {
 
@@ -30,6 +38,7 @@ public class Explore extends BaseActivity {
     private FirebaseFirestore firestore;
 
     private final List<Property> todasPropriedades = new ArrayList<>();
+    private final HashSet<String> favoritados = new HashSet<>();
     private String filtroTipo = "todos";
     private String termoBusca = "";
 
@@ -41,7 +50,7 @@ public class Explore extends BaseActivity {
         initViews();
         initObjects();
         setSelectedNavItem(R.id.navigation_explore);
-        carregarImoveis();
+        carregarFavoritos();
     }
 
     private void initViews() {
@@ -82,6 +91,30 @@ public class Explore extends BaseActivity {
             }
             filtrarEAtualizar();
         });
+    }
+
+    private void carregarFavoritos() {
+        SharedPreferences prefs = getSharedPreferences("HabittaPrefs", MODE_PRIVATE);
+        String email = prefs.getString("email", "");
+
+        if (email.isEmpty()) {
+            carregarImoveis();
+            return;
+        }
+
+        firestore.collection("favorites").document(email).get()
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        List<?> ids = (List<?>) doc.get("propertyIds");
+                        if (ids != null) {
+                            for (Object id : ids) {
+                                if (id instanceof String) favoritados.add((String) id);
+                            }
+                        }
+                    }
+                    carregarImoveis();
+                })
+                .addOnFailureListener(e -> carregarImoveis());
     }
 
     private void carregarImoveis() {
@@ -129,7 +162,28 @@ public class Explore extends BaseActivity {
             recyclerExplore.setAdapter(null);
         } else {
             txtErro.setVisibility(View.GONE);
-            recyclerExplore.setAdapter(new PropertyAdapter(filtradas));
+            recyclerExplore.setAdapter(new PropertyAdapter(filtradas, favoritados, this::toggleFavorito));
+        }
+    }
+
+    private void toggleFavorito(String propertyId, boolean agoraFavoritado) {
+        SharedPreferences prefs = getSharedPreferences("HabittaPrefs", MODE_PRIVATE);
+        String email = prefs.getString("email", "");
+        if (email.isEmpty()) return;
+
+        DocumentReference docRef = firestore.collection("favorites").document(email);
+        Map<String, Object> data = new HashMap<>();
+
+        if (agoraFavoritado) {
+            data.put("propertyIds", FieldValue.arrayUnion(propertyId));
+            docRef.set(data, SetOptions.merge())
+                    .addOnFailureListener(e ->
+                            Toast.makeText(this, "Erro ao salvar favorito", Toast.LENGTH_SHORT).show());
+        } else {
+            data.put("propertyIds", FieldValue.arrayRemove(propertyId));
+            docRef.update(data)
+                    .addOnFailureListener(e ->
+                            Toast.makeText(this, "Erro ao remover favorito", Toast.LENGTH_SHORT).show());
         }
     }
 

@@ -3,6 +3,7 @@ package com.example.habbitamobile_nativo.adapter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -14,15 +15,41 @@ import com.example.habbitamobile_nativo.R;
 import com.example.habbitamobile_nativo.model.Property;
 
 import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 
 public class PropertyAdapter extends RecyclerView.Adapter<PropertyAdapter.PropertyViewHolder> {
 
-    private final List<Property> properties;
+    private final ArrayList<Property> properties;
+    private final HashSet<String> favoritados;
+    private final OnFavoritoToggleListener favoritoListener;
+
+    public interface OnFavoritoToggleListener {
+        void onToggle(String propertyId, boolean agoraFavoritado);
+    }
 
     public PropertyAdapter(List<Property> properties) {
-        this.properties = properties;
+        this.properties = new ArrayList<>(properties);
+        this.favoritados = null;
+        this.favoritoListener = null;
+    }
+
+    public PropertyAdapter(List<Property> properties, HashSet<String> favoritados, OnFavoritoToggleListener listener) {
+        this.properties = new ArrayList<>(properties);
+        this.favoritados = favoritados;
+        this.favoritoListener = listener;
+    }
+
+    public void removerItem(String propertyId) {
+        for (int i = 0; i < properties.size(); i++) {
+            if (properties.get(i).getId().equals(propertyId)) {
+                properties.remove(i);
+                notifyItemRemoved(i);
+                return;
+            }
+        }
     }
 
     @NonNull
@@ -43,9 +70,10 @@ public class PropertyAdapter extends RecyclerView.Adapter<PropertyAdapter.Proper
         return properties.size();
     }
 
-    static class PropertyViewHolder extends RecyclerView.ViewHolder {
+    class PropertyViewHolder extends RecyclerView.ViewHolder {
 
         private final ImageView imgProperty;
+        private final ImageButton btnFavorito;
         private final TextView txtTitle;
         private final TextView txtPrice;
         private final TextView txtBedrooms;
@@ -56,6 +84,7 @@ public class PropertyAdapter extends RecyclerView.Adapter<PropertyAdapter.Proper
         PropertyViewHolder(@NonNull View itemView) {
             super(itemView);
             imgProperty = itemView.findViewById(R.id.imgProperty);
+            btnFavorito = itemView.findViewById(R.id.btnFavorito);
             txtTitle = itemView.findViewById(R.id.txtTitle);
             txtPrice = itemView.findViewById(R.id.txtPrice);
             txtBedrooms = itemView.findViewById(R.id.txtBedrooms);
@@ -81,6 +110,26 @@ public class PropertyAdapter extends RecyclerView.Adapter<PropertyAdapter.Proper
                         .into(imgProperty);
             } else {
                 imgProperty.setImageResource(android.R.drawable.ic_menu_gallery);
+            }
+
+            if (favoritoListener != null && favoritados != null) {
+                btnFavorito.setVisibility(View.VISIBLE);
+                boolean isFav = favoritados.contains(property.getId());
+                btnFavorito.setImageResource(isFav ? R.drawable.ic_heart_filled : R.drawable.ic_heart_border);
+
+                btnFavorito.setOnClickListener(v -> {
+                    boolean currentlyFav = favoritados.contains(property.getId());
+                    if (currentlyFav) {
+                        favoritados.remove(property.getId());
+                        btnFavorito.setImageResource(R.drawable.ic_heart_border);
+                    } else {
+                        favoritados.add(property.getId());
+                        btnFavorito.setImageResource(R.drawable.ic_heart_filled);
+                    }
+                    favoritoListener.onToggle(property.getId(), !currentlyFav);
+                });
+            } else {
+                btnFavorito.setVisibility(View.GONE);
             }
         }
 

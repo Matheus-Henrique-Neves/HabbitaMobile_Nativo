@@ -1,6 +1,7 @@
 package com.example.habbitamobile_nativo;
 
 import android.Manifest;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
@@ -8,6 +9,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -21,12 +23,18 @@ import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
 import com.google.android.gms.tasks.CancellationTokenSource;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.SetOptions;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public class Home extends BaseActivity {
 
@@ -36,6 +44,7 @@ public class Home extends BaseActivity {
     private TextView txtLocalizacao;
     private FirebaseFirestore firestore;
     private FusedLocationProviderClient fusedLocationClient;
+    private final HashSet<String> favoritados = new HashSet<>();
 
     private final ActivityResultLauncher<String[]> solicitarPermissaoLocalizacao =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), resultado -> {
@@ -57,7 +66,7 @@ public class Home extends BaseActivity {
         initObjects();
         setSelectedNavItem(R.id.navigation_home);
         verificarPermissaoLocalizacao();
-        carregarImoveis();
+        carregarFavoritos();
     }
 
     private void initViews() {
@@ -136,6 +145,30 @@ public class Home extends BaseActivity {
         });
     }
 
+    private void carregarFavoritos() {
+        SharedPreferences prefs = getSharedPreferences("HabittaPrefs", MODE_PRIVATE);
+        String email = prefs.getString("email", "");
+
+        if (email.isEmpty()) {
+            carregarImoveis();
+            return;
+        }
+
+        firestore.collection("favorites").document(email).get()
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        List<?> ids = (List<?>) doc.get("propertyIds");
+                        if (ids != null) {
+                            for (Object id : ids) {
+                                if (id instanceof String) favoritados.add((String) id);
+                            }
+                        }
+                    }
+                    carregarImoveis();
+                })
+                .addOnFailureListener(e -> carregarImoveis());
+    }
+
     private void carregarImoveis() {
         progressBar.setVisibility(View.VISIBLE);
         txtErro.setVisibility(View.GONE);
@@ -154,7 +187,7 @@ public class Home extends BaseActivity {
                         txtErro.setVisibility(View.VISIBLE);
                         txtErro.setText("Nenhum imovel cadastrado ainda.");
                     } else {
-                        recyclerImoveis.setAdapter(new PropertyAdapter(properties));
+                        recyclerImoveis.setAdapter(new PropertyAdapter(properties, favoritados, this::toggleFavorito));
                     }
                 })
                 .addOnFailureListener(e -> {
@@ -162,6 +195,27 @@ public class Home extends BaseActivity {
                     txtErro.setVisibility(View.VISIBLE);
                     txtErro.setText("Erro ao carregar imoveis: " + e.getMessage());
                 });
+    }
+
+    private void toggleFavorito(String propertyId, boolean agoraFavoritado) {
+        SharedPreferences prefs = getSharedPreferences("HabittaPrefs", MODE_PRIVATE);
+        String email = prefs.getString("email", "");
+        if (email.isEmpty()) return;
+
+        DocumentReference docRef = firestore.collection("favorites").document(email);
+        Map<String, Object> data = new HashMap<>();
+
+        if (agoraFavoritado) {
+            data.put("propertyIds", FieldValue.arrayUnion(propertyId));
+            docRef.set(data, SetOptions.merge())
+                    .addOnFailureListener(e ->
+                            Toast.makeText(this, "Erro ao salvar favorito", Toast.LENGTH_SHORT).show());
+        } else {
+            data.put("propertyIds", FieldValue.arrayRemove(propertyId));
+            docRef.update(data)
+                    .addOnFailureListener(e ->
+                            Toast.makeText(this, "Erro ao remover favorito", Toast.LENGTH_SHORT).show());
+        }
     }
 
     private Property documentParaProperty(QueryDocumentSnapshot doc) {
