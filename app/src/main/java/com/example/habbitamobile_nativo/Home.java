@@ -1,27 +1,52 @@
 package com.example.habbitamobile_nativo;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.location.Address;
+import android.location.Geocoder;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.habbitamobile_nativo.adapter.PropertyAdapter;
 import com.example.habbitamobile_nativo.model.Property;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.Priority;
+import com.google.android.gms.tasks.CancellationTokenSource;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class Home extends BaseActivity {
 
     private RecyclerView recyclerImoveis;
     private ProgressBar progressBar;
     private TextView txtErro;
+    private TextView txtLocalizacao;
     private FirebaseFirestore firestore;
+    private FusedLocationProviderClient fusedLocationClient;
+
+    private final ActivityResultLauncher<String[]> solicitarPermissaoLocalizacao =
+            registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), resultado -> {
+                boolean concedida = Boolean.TRUE.equals(resultado.get(Manifest.permission.ACCESS_FINE_LOCATION))
+                        || Boolean.TRUE.equals(resultado.get(Manifest.permission.ACCESS_COARSE_LOCATION));
+                if (concedida) {
+                    buscarLocalizacao();
+                } else {
+                    txtLocalizacao.setText("Localizacao nao permitida");
+                }
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,6 +56,7 @@ public class Home extends BaseActivity {
         initViews();
         initObjects();
         setSelectedNavItem(R.id.navigation_home);
+        verificarPermissaoLocalizacao();
         carregarImoveis();
     }
 
@@ -38,11 +64,76 @@ public class Home extends BaseActivity {
         recyclerImoveis = findViewById(R.id.recyclerImoveis);
         progressBar = findViewById(R.id.progressBar);
         txtErro = findViewById(R.id.txtErro);
+        txtLocalizacao = findViewById(R.id.txtLocalizacao);
         recyclerImoveis.setLayoutManager(new LinearLayoutManager(this));
     }
 
     private void initObjects() {
         firestore = FirebaseFirestore.getInstance();
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+    }
+
+    private void verificarPermissaoLocalizacao() {
+        boolean fineOk = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED;
+        boolean coarseOk = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED;
+
+        if (fineOk || coarseOk) {
+            buscarLocalizacao();
+        } else {
+            solicitarPermissaoLocalizacao.launch(new String[]{
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+            });
+        }
+    }
+
+    @SuppressWarnings("MissingPermission")
+    private void buscarLocalizacao() {
+        CancellationTokenSource cts = new CancellationTokenSource();
+
+        fusedLocationClient
+                .getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, cts.getToken())
+                .addOnSuccessListener(location -> {
+                    if (location == null) {
+                        txtLocalizacao.setText("Localizacao indisponivel");
+                        return;
+                    }
+                    reverterCoordenadas(location.getLatitude(), location.getLongitude());
+                })
+                .addOnFailureListener(e ->
+                        txtLocalizacao.setText("Erro ao obter localizacao"));
+    }
+
+    private void reverterCoordenadas(double lat, double lng) {
+        if (!Geocoder.isPresent()) {
+            txtLocalizacao.setText(String.format(Locale.getDefault(), "%.4f, %.4f", lat, lng));
+            return;
+        }
+
+        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+        geocoder.getFromLocation(lat, lng, 1, new Geocoder.GeocodeListener() {
+            @Override
+            public void onGeocode(List<Address> addresses) {
+                if (addresses.isEmpty()) {
+                    runOnUiThread(() -> txtLocalizacao.setText("Cidade desconhecida"));
+                    return;
+                }
+                Address address = addresses.get(0);
+                String cidade = address.getLocality();
+                if (cidade == null) cidade = address.getSubAdminArea();
+                String estado = address.getAdminArea();
+                String texto = (cidade != null ? cidade : "") +
+                        (estado != null ? ", " + estado : "");
+                runOnUiThread(() -> txtLocalizacao.setText(texto.isEmpty() ? "Localizado" : texto));
+            }
+
+            @Override
+            public void onError(String errorMessage) {
+                runOnUiThread(() -> txtLocalizacao.setText("Erro de geocodificacao"));
+            }
+        });
     }
 
     private void carregarImoveis() {
