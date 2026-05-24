@@ -1,18 +1,23 @@
 package com.example.habbitamobile_nativo;
 
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
-import android.widget.Toast;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.habbitamobile_nativo.dao.UsuarioDAO;
 import com.example.habbitamobile_nativo.model.Usuario;
+import com.example.habbitamobile_nativo.util.SenhaUtil;
+import com.google.android.material.textfield.TextInputEditText;
 
 public class RegisterUser extends AppCompatActivity {
 
-    private EditText txtEmail, txtSenha;
+    private TextInputEditText edtEmail;
+    private TextInputEditText edtSenha;
+    private TextInputEditText edtConfirmarSenha;
+    private TextView txtErro;
     private Button btnCadastrar;
     private UsuarioDAO usuarioDAO;
 
@@ -27,8 +32,10 @@ public class RegisterUser extends AppCompatActivity {
     }
 
     private void initViews() {
-        txtEmail = findViewById(R.id.edtEmailCadastro);
-        txtSenha = findViewById(R.id.edtSenhaCadastro);
+        edtEmail = findViewById(R.id.edtEmailCadastro);
+        edtSenha = findViewById(R.id.edtSenhaCadastro);
+        edtConfirmarSenha = findViewById(R.id.edtConfirmarSenhaCadastro);
+        txtErro = findViewById(R.id.txtErroCadastro);
         btnCadastrar = findViewById(R.id.btnCadastrar);
     }
 
@@ -41,57 +48,87 @@ public class RegisterUser extends AppCompatActivity {
     }
 
     private void realizarCadastro() {
-        String email = txtEmail.getText().toString().trim().toLowerCase();
-        String senha = txtSenha.getText().toString();
+        esconderErro();
 
-        if (!validarCampos(email, senha)) {
+        String email = edtEmail.getText().toString().trim().toLowerCase();
+        String senha = edtSenha.getText().toString();
+        String confirmar = edtConfirmarSenha.getText().toString();
+
+        if (!validarCampos(email, senha, confirmar)) {
             return;
         }
 
-        // Verificar se email já existe
         if (usuarioDAO.emailExiste(email)) {
-            txtEmail.setError("Este email já está cadastrado");
-            txtEmail.requestFocus();
-            Toast.makeText(this, "Email já cadastrado", Toast.LENGTH_LONG).show();
+            mostrarErro("Este email ja esta cadastrado.");
+            edtEmail.requestFocus();
             return;
         }
 
-        Usuario usuario = new Usuario(email, senha);
+        String senhaHash = SenhaUtil.hash(senha);
+        Usuario usuario = new Usuario(email, senhaHash);
         boolean sucesso = usuarioDAO.inserir(usuario);
 
         if (sucesso) {
-            Toast.makeText(this, "Cadastro realizado com sucesso!", Toast.LENGTH_LONG).show();
+            setResult(RESULT_OK);
             finish();
         } else {
-            Toast.makeText(this, "Erro ao cadastrar. Tente novamente.", Toast.LENGTH_LONG).show();
+            mostrarErro("Erro ao cadastrar. Tente novamente.");
         }
     }
 
-    private boolean validarCampos(String email, String senha) {
+    private boolean validarCampos(String email, String senha, String confirmar) {
         if (email.isEmpty()) {
-            txtEmail.setError("Digite seu email");
-            txtEmail.requestFocus();
+            mostrarErro("Digite seu email.");
+            edtEmail.requestFocus();
             return false;
         }
 
         if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            txtEmail.setError("Digite um email válido");
-            txtEmail.requestFocus();
+            mostrarErro("Digite um email valido.");
+            edtEmail.requestFocus();
             return false;
         }
 
         if (senha.isEmpty()) {
-            txtSenha.setError("Digite sua senha");
-            txtSenha.requestFocus();
+            mostrarErro("Digite sua senha.");
+            edtSenha.requestFocus();
             return false;
         }
 
-        if (senha.length() < 4) {
-            txtSenha.setError("Senha deve ter no mínimo 4 caracteres");
-            txtSenha.requestFocus();
+        if (senha.length() < 6) {
+            mostrarErro("A senha deve ter no minimo 6 caracteres.");
+            edtSenha.requestFocus();
+            return false;
+        }
+
+        if (!senha.matches(".*[a-zA-Z].*") || !senha.matches(".*[0-9].*")) {
+            mostrarErro("A senha deve conter letras e numeros.");
+            edtSenha.requestFocus();
+            return false;
+        }
+
+        if (confirmar.isEmpty()) {
+            mostrarErro("Confirme sua senha.");
+            edtConfirmarSenha.requestFocus();
+            return false;
+        }
+
+        if (!senha.equals(confirmar)) {
+            mostrarErro("As senhas nao coincidem.");
+            edtConfirmarSenha.requestFocus();
             return false;
         }
 
         return true;
+    }
+
+    private void mostrarErro(String mensagem) {
+        txtErro.setText(mensagem);
+        txtErro.setVisibility(View.VISIBLE);
+    }
+
+    private void esconderErro() {
+        txtErro.setVisibility(View.GONE);
+        txtErro.setText("");
     }
 }

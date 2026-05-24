@@ -7,17 +7,17 @@ import android.database.sqlite.SQLiteDatabase;
 
 import com.example.habbitamobile_nativo.database.DatabaseConnection;
 import com.example.habbitamobile_nativo.model.Usuario;
+import com.example.habbitamobile_nativo.util.SenhaUtil;
 
 public class UsuarioDAO {
 
     private SQLiteDatabase db;
-    private DatabaseConnection con;
+    private final DatabaseConnection con;
 
     public UsuarioDAO(Context context) {
         con = new DatabaseConnection(context);
     }
 
-    // Abre a conexão (deve ser chamado antes de operações)
     private void openWritable() {
         db = con.getWritableDatabase();
     }
@@ -26,7 +26,6 @@ public class UsuarioDAO {
         db = con.getReadableDatabase();
     }
 
-    // Fecha a conexão
     private void close() {
         if (db != null && db.isOpen()) {
             db.close();
@@ -40,16 +39,12 @@ public class UsuarioDAO {
 
         try {
             openWritable();
-
             ContentValues values = new ContentValues();
             values.put("email", usuario.getEmail().trim().toLowerCase());
             values.put("senha", usuario.getSenha());
-
             long resultado = db.insert(DatabaseConnection.TABELA_USUARIO, null, values);
-            return resultado != -1; // CORRIGIDO: retorna true se inseriu com sucesso
-
+            return resultado != -1;
         } catch (Exception e) {
-            e.printStackTrace();
             return false;
         } finally {
             close();
@@ -62,56 +57,41 @@ public class UsuarioDAO {
         }
 
         Cursor cursor = null;
-
         try {
             openReadable();
-
+            String senhaHash = SenhaUtil.hash(senha);
             cursor = db.rawQuery(
                     "SELECT * FROM " + DatabaseConnection.TABELA_USUARIO +
                             " WHERE email=? AND senha=?",
-                    new String[]{email.trim().toLowerCase(), senha}
+                    new String[]{email.trim().toLowerCase(), senhaHash}
             );
-
-            boolean existe = cursor.getCount() > 0;
-            return existe;
-
+            return cursor.getCount() > 0;
         } catch (Exception e) {
-            e.printStackTrace();
             return false;
         } finally {
-            if (cursor != null) {
-                cursor.close();
-            }
+            if (cursor != null) cursor.close();
             close();
         }
     }
 
-    // Método adicional para verificar se email já existe
     public boolean emailExiste(String email) {
         if (email == null || email.trim().isEmpty()) {
             return false;
         }
 
         Cursor cursor = null;
-
         try {
             openReadable();
-
             cursor = db.rawQuery(
                     "SELECT * FROM " + DatabaseConnection.TABELA_USUARIO +
                             " WHERE email=?",
                     new String[]{email.trim().toLowerCase()}
             );
-
             return cursor.getCount() > 0;
-
         } catch (Exception e) {
-            e.printStackTrace();
             return false;
         } finally {
-            if (cursor != null) {
-                cursor.close();
-            }
+            if (cursor != null) cursor.close();
             close();
         }
     }
