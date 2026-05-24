@@ -3,20 +3,26 @@ package com.example.habbitamobile_nativo;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
-import android.widget.Toast;
+import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.biometric.BiometricManager;
+import androidx.biometric.BiometricPrompt;
+import androidx.core.content.ContextCompat;
 
 import com.example.habbitamobile_nativo.dao.UsuarioDAO;
 
 public class MainActivity extends AppCompatActivity {
 
-    private Button btnLogin, btnTelaCadastro;
+    private Button btnLogin, btnTelaCadastro, btnBiometria;
     private EditText edtEmail, edtSenha;
     private CheckBox checkBoxLembrar;
+    private TextView lblMensagem;
     private UsuarioDAO usuarioDAO;
     private SharedPreferences preferences;
 
@@ -28,15 +34,18 @@ public class MainActivity extends AppCompatActivity {
         initViews();
         initObjects();
         loadSavedCredentials();
+        verificarBiometria();
         setupListeners();
     }
 
     private void initViews() {
         btnLogin = findViewById(R.id.btnLogin);
         btnTelaCadastro = findViewById(R.id.btnCadastro);
+        btnBiometria = findViewById(R.id.btnBiometria);
         edtEmail = findViewById(R.id.textEmail);
         edtSenha = findViewById(R.id.textSenha);
         checkBoxLembrar = findViewById(R.id.checkBox);
+        lblMensagem = findViewById(R.id.lblMensagem);
     }
 
     private void initObjects() {
@@ -55,9 +64,73 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void verificarBiometria() {
+        boolean temCredenciais = preferences.getBoolean("lembrar_me", false);
+        if (!temCredenciais) {
+            return;
+        }
+
+        BiometricManager biometricManager = BiometricManager.from(this);
+        int resultado = biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG);
+
+        if (resultado == BiometricManager.BIOMETRIC_SUCCESS) {
+            edtEmail.setText("");
+            edtSenha.setText("");
+            btnBiometria.setVisibility(View.VISIBLE);
+            mostrarPromptBiometrico();
+        }
+    }
+
+    private void mostrarPromptBiometrico() {
+        lblMensagem.setText("");
+
+        BiometricPrompt.PromptInfo promptInfo = new BiometricPrompt.PromptInfo.Builder()
+                .setTitle("Autenticacao Biometrica")
+                .setSubtitle("Use sua digital para entrar")
+                .setNegativeButtonText("Usar Senha")
+                .build();
+
+        BiometricPrompt biometricPrompt = new BiometricPrompt(this,
+                ContextCompat.getMainExecutor(this),
+                new BiometricPrompt.AuthenticationCallback() {
+                    @Override
+                    public void onAuthenticationSucceeded(@NonNull BiometricPrompt.AuthenticationResult result) {
+                        super.onAuthenticationSucceeded(result);
+                        abrirTelaMenu();
+                    }
+
+                    @Override
+                    public void onAuthenticationFailed() {
+                        super.onAuthenticationFailed();
+                        lblMensagem.setText("Biometria nao reconhecida");
+                    }
+
+                    @Override
+                    public void onAuthenticationError(int errorCode, @NonNull CharSequence errString) {
+                        super.onAuthenticationError(errorCode, errString);
+                        switch (errorCode) {
+                            case BiometricPrompt.ERROR_NEGATIVE_BUTTON:
+                                break;
+                            case BiometricPrompt.ERROR_LOCKOUT:
+                                lblMensagem.setText("Muitas tentativas. Use sua senha.");
+                                break;
+                            case BiometricPrompt.ERROR_LOCKOUT_PERMANENT:
+                                lblMensagem.setText("Biometria bloqueada. Contate o suporte.");
+                                break;
+                            default:
+                                lblMensagem.setText(errString.toString());
+                                break;
+                        }
+                    }
+                });
+
+        biometricPrompt.authenticate(promptInfo);
+    }
+
     private void setupListeners() {
         btnLogin.setOnClickListener(v -> realizarLogin());
         btnTelaCadastro.setOnClickListener(v -> abrirTelaCadastro());
+        btnBiometria.setOnClickListener(v -> mostrarPromptBiometrico());
     }
 
     private void realizarLogin() {
@@ -74,7 +147,7 @@ public class MainActivity extends AppCompatActivity {
             salvarPreferencias(email, senha);
             abrirTelaMenu();
         } else {
-            Toast.makeText(this, "Email ou senha inválidos", Toast.LENGTH_LONG).show();
+            lblMensagem.setText("Email ou senha invalidos");
             edtEmail.requestFocus();
         }
     }
