@@ -1,40 +1,52 @@
 package com.example.habbitamobile_nativo;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.location.Address;
+import android.location.Geocoder;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.habbitamobile_nativo.adapter.PropertyAdapter;
 import com.example.habbitamobile_nativo.model.Property;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.Priority;
+import com.google.android.gms.tasks.CancellationTokenSource;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
-
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
+import java.util.Locale;
 
 public class Home extends BaseActivity {
-
-    private static final String URL_PROPERTIES = "https://habitta-mobile.onrender.com/properties";
 
     private RecyclerView recyclerImoveis;
     private ProgressBar progressBar;
     private TextView txtErro;
-    private OkHttpClient httpClient;
+    private TextView txtLocalizacao;
+    private FirebaseFirestore firestore;
+    private FusedLocationProviderClient fusedLocationClient;
+
+    private final ActivityResultLauncher<String[]> solicitarPermissaoLocalizacao =
+            registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), resultado -> {
+                boolean concedida = Boolean.TRUE.equals(resultado.get(Manifest.permission.ACCESS_FINE_LOCATION))
+                        || Boolean.TRUE.equals(resultado.get(Manifest.permission.ACCESS_COARSE_LOCATION));
+                if (concedida) {
+                    buscarLocalizacao();
+                } else {
+                    txtLocalizacao.setText("Localizacao nao permitida");
+                }
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,6 +56,7 @@ public class Home extends BaseActivity {
         initViews();
         initObjects();
         setSelectedNavItem(R.id.navigation_home);
+        verificarPermissaoLocalizacao();
         carregarImoveis();
     }
 
@@ -51,91 +64,131 @@ public class Home extends BaseActivity {
         recyclerImoveis = findViewById(R.id.recyclerImoveis);
         progressBar = findViewById(R.id.progressBar);
         txtErro = findViewById(R.id.txtErro);
+        txtLocalizacao = findViewById(R.id.txtLocalizacao);
         recyclerImoveis.setLayoutManager(new LinearLayoutManager(this));
     }
 
     private void initObjects() {
-        httpClient = new OkHttpClient.Builder()
-                .connectTimeout(30, TimeUnit.SECONDS)
-                .readTimeout(30, TimeUnit.SECONDS)
-                .build();
+        firestore = FirebaseFirestore.getInstance();
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+    }
+
+    private void verificarPermissaoLocalizacao() {
+        boolean fineOk = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED;
+        boolean coarseOk = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED;
+
+        if (fineOk || coarseOk) {
+            buscarLocalizacao();
+        } else {
+            solicitarPermissaoLocalizacao.launch(new String[]{
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+            });
+        }
+    }
+
+    @SuppressWarnings("MissingPermission")
+    private void buscarLocalizacao() {
+        CancellationTokenSource cts = new CancellationTokenSource();
+
+        fusedLocationClient
+                .getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, cts.getToken())
+                .addOnSuccessListener(location -> {
+                    if (location == null) {
+                        txtLocalizacao.setText("Localizacao indisponivel");
+                        return;
+                    }
+                    reverterCoordenadas(location.getLatitude(), location.getLongitude());
+                })
+                .addOnFailureListener(e ->
+                        txtLocalizacao.setText("Erro ao obter localizacao"));
+    }
+
+    private void reverterCoordenadas(double lat, double lng) {
+        if (!Geocoder.isPresent()) {
+            txtLocalizacao.setText(String.format(Locale.getDefault(), "%.4f, %.4f", lat, lng));
+            return;
+        }
+
+        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+        geocoder.getFromLocation(lat, lng, 1, new Geocoder.GeocodeListener() {
+            @Override
+            public void onGeocode(List<Address> addresses) {
+                if (addresses.isEmpty()) {
+                    runOnUiThread(() -> txtLocalizacao.setText("Cidade desconhecida"));
+                    return;
+                }
+                Address address = addresses.get(0);
+                String cidade = address.getLocality();
+                if (cidade == null) cidade = address.getSubAdminArea();
+                String estado = address.getAdminArea();
+                String texto = (cidade != null ? cidade : "") +
+                        (estado != null ? ", " + estado : "");
+                runOnUiThread(() -> txtLocalizacao.setText(texto.isEmpty() ? "Localizado" : texto));
+            }
+
+            @Override
+            public void onError(String errorMessage) {
+                runOnUiThread(() -> txtLocalizacao.setText("Erro de geocodificacao"));
+            }
+        });
     }
 
     private void carregarImoveis() {
         progressBar.setVisibility(View.VISIBLE);
         txtErro.setVisibility(View.GONE);
 
-        Request request = new Request.Builder()
-                .url(URL_PROPERTIES)
-                .build();
+        firestore.collection("properties")
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    List<Property> properties = new ArrayList<>();
+                    for (QueryDocumentSnapshot doc : snapshot) {
+                        properties.add(documentParaProperty(doc));
+                    }
 
-        httpClient.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                runOnUiThread(() -> {
+                    progressBar.setVisibility(View.GONE);
+
+                    if (properties.isEmpty()) {
+                        txtErro.setVisibility(View.VISIBLE);
+                        txtErro.setText("Nenhum imovel cadastrado ainda.");
+                    } else {
+                        recyclerImoveis.setAdapter(new PropertyAdapter(properties));
+                    }
+                })
+                .addOnFailureListener(e -> {
                     progressBar.setVisibility(View.GONE);
                     txtErro.setVisibility(View.VISIBLE);
-                    txtErro.setText("Sem conexao. Verifique sua internet.");
+                    txtErro.setText("Erro ao carregar imoveis: " + e.getMessage());
                 });
-            }
-
-            @Override
-            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                if (!response.isSuccessful() || response.body() == null) {
-                    runOnUiThread(() -> {
-                        progressBar.setVisibility(View.GONE);
-                        txtErro.setVisibility(View.VISIBLE);
-                        txtErro.setText("Erro ao buscar imoveis: " + response.code());
-                    });
-                    return;
-                }
-
-                String json = response.body().string();
-
-                try {
-                    List<Property> properties = parsearImoveis(json);
-                    runOnUiThread(() -> {
-                        progressBar.setVisibility(View.GONE);
-                        if (properties.isEmpty()) {
-                            txtErro.setVisibility(View.VISIBLE);
-                            txtErro.setText("Nenhum imovel encontrado.");
-                        } else {
-                            recyclerImoveis.setAdapter(new PropertyAdapter(properties));
-                        }
-                    });
-                } catch (JSONException e) {
-                    runOnUiThread(() -> {
-                        progressBar.setVisibility(View.GONE);
-                        txtErro.setVisibility(View.VISIBLE);
-                        txtErro.setText("Erro ao processar dados recebidos.");
-                    });
-                }
-            }
-        });
     }
 
-    private List<Property> parsearImoveis(String json) throws JSONException {
-        List<Property> lista = new ArrayList<>();
-        JSONArray array = new JSONArray(json);
+    private Property documentParaProperty(QueryDocumentSnapshot doc) {
+        Property p = new Property();
+        p.setId(doc.getId());
+        p.setTitle(doc.getString("title"));
+        p.setImageUrl(doc.getString("image_url"));
+        p.setAddress(doc.getString("address"));
+        p.setDescription(doc.getString("description"));
+        p.setType(doc.getString("type"));
+        p.setTransactionType(doc.getString("transactionType"));
 
-        for (int i = 0; i < array.length(); i++) {
-            JSONObject obj = array.getJSONObject(i);
-            Property p = new Property();
-            p.setId(obj.optString("id"));
-            p.setImageUrl(obj.optString("image_url"));
-            p.setTitle(obj.optString("title"));
-            p.setPrice(obj.optDouble("price", 0));
-            p.setBedrooms(obj.optInt("bedrooms", 0));
-            p.setBathrooms(obj.optInt("bathrooms", 0));
-            p.setGarages(obj.optInt("garages", 0));
-            p.setAddress(obj.optString("address"));
-            p.setDescription(obj.optString("description"));
-            p.setType(obj.optString("type"));
-            p.setTransactionType(obj.optString("transactionType"));
-            p.setArea(obj.optDouble("area", 0));
-            lista.add(p);
-        }
+        Double price = doc.getDouble("price");
+        p.setPrice(price != null ? price : 0);
 
-        return lista;
+        Double area = doc.getDouble("area");
+        p.setArea(area != null ? area : 0);
+
+        Long bedrooms = doc.getLong("bedrooms");
+        p.setBedrooms(bedrooms != null ? bedrooms.intValue() : 0);
+
+        Long bathrooms = doc.getLong("bathrooms");
+        p.setBathrooms(bathrooms != null ? bathrooms.intValue() : 0);
+
+        Long garages = doc.getLong("garages");
+        p.setGarages(garages != null ? garages.intValue() : 0);
+
+        return p;
     }
 }
