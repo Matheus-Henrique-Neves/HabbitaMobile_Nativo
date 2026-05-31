@@ -8,10 +8,10 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AlertDialog;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.content.Intent;
 import com.example.habbitamobile_nativo.adapter.PropertyAdapter;
 import com.example.habbitamobile_nativo.api.ApiService;
 import com.example.habbitamobile_nativo.model.Property;
@@ -21,11 +21,9 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.journeyapps.barcodescanner.ScanContract;
 import com.journeyapps.barcodescanner.ScanOptions;
 
-import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 
 public class Explore extends BaseActivity {
 
@@ -101,14 +99,14 @@ public class Explore extends BaseActivity {
         String id = extrairId(conteudo);
 
         for (Property p : todasPropriedades) {
-            if (id.equals(p.getId())) { exibirDialogImovel(p); return; }
+            if (id.equals(p.getId())) { abrirDetalhes(p); return; }
         }
 
         ApiService.getInstance().buscarImovelPorId(id, new ApiService.BuscarImoveisCallback() {
             @Override
             public void onSucesso(List<Property> properties) {
                 runOnUiThread(() -> {
-                    if (!properties.isEmpty()) exibirDialogImovel(properties.get(0));
+                    if (!properties.isEmpty()) abrirDetalhes(properties.get(0));
                     else Toast.makeText(Explore.this, "Imovel nao encontrado", Toast.LENGTH_SHORT).show();
                 });
             }
@@ -127,22 +125,10 @@ public class Explore extends BaseActivity {
         return conteudo.trim();
     }
 
-    private void exibirDialogImovel(Property p) {
-        NumberFormat nf = NumberFormat.getNumberInstance(new Locale("pt", "BR"));
-        String preco = "R$ " + nf.format((long) p.getPrice());
-        String mensagem = "Endereco: " + (p.getAddress() != null ? p.getAddress() : "-") + "\n"
-                + "Preco: " + preco + "\n"
-                + "Quartos: " + p.getBedrooms() + "\n"
-                + "Banheiros: " + p.getBathrooms() + "\n"
-                + "Garagem: " + p.getGarages() + " vagas\n"
-                + (p.getArea() > 0 ? "Area: " + (int) p.getArea() + " m2\n" : "")
-                + (p.getDescription() != null && !p.getDescription().isEmpty() ? "\n" + p.getDescription() : "");
-
-        new AlertDialog.Builder(this)
-                .setTitle(p.getTitle() != null ? p.getTitle() : "Imovel")
-                .setMessage(mensagem)
-                .setPositiveButton("Fechar", null)
-                .show();
+    private void abrirDetalhes(Property p) {
+        Intent intent = new Intent(Explore.this, PropertyDetails.class);
+        intent.putExtra(PropertyDetails.EXTRA_PROPERTY, p);
+        startActivity(intent);
     }
 
     private void carregarFavoritos() {
@@ -192,7 +178,13 @@ public class Explore extends BaseActivity {
             recyclerExplore.setAdapter(null);
         } else if (!filtradas.isEmpty()) {
             txtErro.setVisibility(View.GONE);
-            recyclerExplore.setAdapter(new PropertyAdapter(filtradas, favoritados, this::toggleFavorito));
+            PropertyAdapter adapter = new PropertyAdapter(filtradas, favoritados, this::toggleFavorito);
+            adapter.setOnPropertyClickListener(p -> {
+                Intent intent = new Intent(Explore.this, PropertyDetails.class);
+                intent.putExtra(PropertyDetails.EXTRA_PROPERTY, p);
+                startActivity(intent);
+            });
+            recyclerExplore.setAdapter(adapter);
         }
     }
 

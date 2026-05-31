@@ -1,5 +1,6 @@
 package com.example.habbitamobile_nativo;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ProgressBar;
@@ -122,6 +123,7 @@ public class Saved extends BaseActivity {
             return;
         }
         adapter = new PropertyAdapter(properties, favoritados, (propertyId, agoraFavoritado) -> {
+
             ApiService.getInstance().removerFavorito(propertyId, new ApiService.SimpleCallback() {
                 @Override public void onSucesso() {
                     runOnUiThread(() -> {
@@ -133,6 +135,11 @@ public class Saved extends BaseActivity {
                     runOnUiThread(() -> Toast.makeText(Saved.this, "Erro ao remover favorito", Toast.LENGTH_SHORT).show());
                 }
             });
+        });
+        adapter.setOnPropertyClickListener(p -> {
+            Intent intent = new Intent(Saved.this, PropertyDetails.class);
+            intent.putExtra(PropertyDetails.EXTRA_PROPERTY, p);
+            startActivity(intent);
         });
         recyclerSaved.setAdapter(adapter);
         recyclerSaved.setVisibility(View.VISIBLE);

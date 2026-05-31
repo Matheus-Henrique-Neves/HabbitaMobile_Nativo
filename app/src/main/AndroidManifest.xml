@@ -34,6 +34,7 @@
         <activity android:name=".Profile" />
         <activity android:name=".Saved" />
         <activity android:name=".RegisterProperty" />
+        <activity android:name=".PropertyDetails" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

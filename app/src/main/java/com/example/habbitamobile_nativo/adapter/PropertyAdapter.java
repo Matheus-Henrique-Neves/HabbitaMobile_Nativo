@@ -30,6 +30,12 @@ public class PropertyAdapter extends RecyclerView.Adapter<PropertyAdapter.Proper
         void onToggle(String propertyId, boolean agoraFavoritado);
     }
 
+    public interface OnPropertyClickListener {
+        void onClick(Property property);
+    }
+
+    private OnPropertyClickListener clickListener;
+
     public PropertyAdapter(List<Property> properties) {
         this.properties = new ArrayList<>(properties);
         this.favoritados = null;
@@ -40,6 +46,10 @@ public class PropertyAdapter extends RecyclerView.Adapter<PropertyAdapter.Proper
         this.properties = new ArrayList<>(properties);
         this.favoritados = favoritados;
         this.favoritoListener = listener;
+    }
+
+    public void setOnPropertyClickListener(OnPropertyClickListener listener) {
+        this.clickListener = listener;
     }
 
     public void removerItem(String propertyId) {
@@ -94,6 +104,10 @@ public class PropertyAdapter extends RecyclerView.Adapter<PropertyAdapter.Proper
         }
 
         void bind(Property property) {
+            itemView.setOnClickListener(v -> {
+                if (clickListener != null) clickListener.onClick(property);
+            });
+
             txtTitle.setText(property.getTitle());
             txtPrice.setText(formatarPreco(property.getPrice()));
             txtBedrooms.setText(property.getBedrooms() + " quartos");

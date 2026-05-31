@@ -283,6 +283,13 @@ public class ApiService {
         p.setBedrooms(obj.optInt("bedrooms", 0));
         p.setBathrooms(obj.optInt("bathrooms", 0));
         p.setGarages(obj.optInt("garages", 0));
+
+        JSONArray photosArr = obj.optJSONArray("photos");
+        if (photosArr != null) {
+            List<String> photos = new ArrayList<>();
+            for (int i = 0; i < photosArr.length(); i++) photos.add(photosArr.getString(i));
+            p.setPhotos(photos);
+        }
         return p;
     }
 }

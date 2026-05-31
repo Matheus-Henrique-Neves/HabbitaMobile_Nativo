@@ -16,6 +16,7 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.content.Intent;
 import com.example.habbitamobile_nativo.adapter.PropertyAdapter;
 import com.example.habbitamobile_nativo.api.ApiService;
 import com.example.habbitamobile_nativo.model.Property;
@@ -135,7 +136,13 @@ public class Home extends BaseActivity {
                         txtErro.setVisibility(View.VISIBLE);
                         txtErro.setText("Nenhum imovel disponivel.");
                     } else {
-                        recyclerImoveis.setAdapter(new PropertyAdapter(properties, favoritados, Home.this::toggleFavorito));
+                        PropertyAdapter adapter = new PropertyAdapter(properties, favoritados, Home.this::toggleFavorito);
+                        adapter.setOnPropertyClickListener(p -> {
+                            Intent intent = new Intent(Home.this, PropertyDetails.class);
+                            intent.putExtra(PropertyDetails.EXTRA_PROPERTY, p);
+                            startActivity(intent);
+                        });
+                        recyclerImoveis.setAdapter(adapter);
                     }
                 });
             }

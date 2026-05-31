@@ -1,6 +1,12 @@
 package com.example.habbitamobile_nativo.model;
 
-public class Property {
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+
+public class Property implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private String id;
     private String imageUrl;
@@ -14,6 +20,7 @@ public class Property {
     private String type;
     private String transactionType;
     private double area;
+    private List<String> photos = new ArrayList<>();
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
@@ -50,4 +57,7 @@ public class Property {
 
     public double getArea() { return area; }
     public void setArea(double area) { this.area = area; }
+
+    public List<String> getPhotos() { return photos; }
+    public void setPhotos(List<String> photos) { this.photos = photos != null ? photos : new ArrayList<>(); }
 }
