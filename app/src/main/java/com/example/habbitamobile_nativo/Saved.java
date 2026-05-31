@@ -98,7 +98,7 @@ public class Saved extends BaseActivity {
         for (String id : idsList) {
             ApiService.getInstance().buscarImovelPorId(id, new ApiService.BuscarImoveisCallback() {
                 @Override
-                public void onSucesso(List<Property> resultado) {
+                public void onSucesso(List<Property> resultado, boolean hasMore) {
                     if (!resultado.isEmpty()) properties.add(resultado.get(0));
                     concluidos[0]++;
                     if (concluidos[0] == idsList.size()) {

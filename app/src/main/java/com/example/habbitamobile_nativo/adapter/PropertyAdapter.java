@@ -52,6 +52,12 @@ public class PropertyAdapter extends RecyclerView.Adapter<PropertyAdapter.Proper
         this.clickListener = listener;
     }
 
+    public void adicionarItens(List<Property> novos) {
+        int inicio = properties.size();
+        properties.addAll(novos);
+        notifyItemRangeInserted(inicio, novos.size());
+    }
+
     public void removerItem(String propertyId) {
         for (int i = 0; i < properties.size(); i++) {
             if (properties.get(i).getId().equals(propertyId)) {

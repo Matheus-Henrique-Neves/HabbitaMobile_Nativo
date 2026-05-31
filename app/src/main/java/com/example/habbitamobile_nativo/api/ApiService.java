@@ -44,7 +44,7 @@ public class ApiService {
     }
 
     public interface BuscarImoveisCallback {
-        void onSucesso(List<Property> properties);
+        void onSucesso(List<Property> properties, boolean hasMore);
         void onFalha(String mensagem);
     }
 
@@ -78,9 +78,9 @@ public class ApiService {
         void onToken(String token);
     }
 
-    public void buscarImoveis(BuscarImoveisCallback callback) {
+    public void buscarImoveis(int page, BuscarImoveisCallback callback) {
         Request request = new Request.Builder()
-                .url(BASE_URL + "/properties")
+                .url(BASE_URL + "/properties?page=" + page + "&limit=10")
                 .build();
 
         client.newCall(request).enqueue(new Callback() {
@@ -96,7 +96,14 @@ public class ApiService {
                     return;
                 }
                 try {
-                    callback.onSucesso(parsearImoveis(response.body().string()));
+                    JSONObject obj = new JSONObject(response.body().string());
+                    JSONArray arr = obj.getJSONArray("properties");
+                    boolean hasMore = obj.optBoolean("hasMore", false);
+                    List<Property> properties = new ArrayList<>();
+                    for (int i = 0; i < arr.length(); i++) {
+                        properties.add(parsearImovel(arr.getJSONObject(i)));
+                    }
+                    callback.onSucesso(properties, hasMore);
                 } catch (JSONException e) {
                     callback.onFalha("Erro ao processar resposta");
                 }
@@ -124,7 +131,7 @@ public class ApiService {
                 try {
                     List<Property> lista = new ArrayList<>();
                     lista.add(parsearImovel(new JSONObject(response.body().string())));
-                    callback.onSucesso(lista);
+                    callback.onSucesso(lista, false);
                 } catch (JSONException e) {
                     callback.onFalha("Erro ao processar resposta");
                 }

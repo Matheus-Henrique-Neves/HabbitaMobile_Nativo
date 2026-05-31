@@ -70,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void mostrarPromptBiometrico() {
-        lblMensagem.setText("");
+        lblMensagem.setVisibility(View.GONE);
 
         BiometricPrompt.PromptInfo promptInfo = new BiometricPrompt.PromptInfo.Builder()
                 .setTitle("Autenticacao Biometrica")
@@ -90,6 +90,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onAuthenticationFailed() {
                         super.onAuthenticationFailed();
+                        lblMensagem.setVisibility(View.VISIBLE);
                         lblMensagem.setText("Biometria nao reconhecida");
                     }
 
@@ -98,14 +99,18 @@ public class MainActivity extends AppCompatActivity {
                         super.onAuthenticationError(errorCode, errString);
                         switch (errorCode) {
                             case BiometricPrompt.ERROR_NEGATIVE_BUTTON:
+                                lblMensagem.setVisibility(View.GONE);
                                 break;
                             case BiometricPrompt.ERROR_LOCKOUT:
+                                lblMensagem.setVisibility(View.VISIBLE);
                                 lblMensagem.setText("Muitas tentativas. Use sua senha.");
                                 break;
                             case BiometricPrompt.ERROR_LOCKOUT_PERMANENT:
+                                lblMensagem.setVisibility(View.VISIBLE);
                                 lblMensagem.setText("Biometria bloqueada. Contate o suporte.");
                                 break;
                             default:
+                                lblMensagem.setVisibility(View.VISIBLE);
                                 lblMensagem.setText(errString.toString());
                                 break;
                         }
@@ -137,6 +142,7 @@ public class MainActivity extends AppCompatActivity {
                 .addOnSuccessListener(result -> abrirTelaMenu())
                 .addOnFailureListener(e -> {
                     btnLogin.setEnabled(true);
+                    lblMensagem.setVisibility(View.VISIBLE);
                     lblMensagem.setText("Email ou senha invalidos");
                     edtEmail.requestFocus();
                 });
