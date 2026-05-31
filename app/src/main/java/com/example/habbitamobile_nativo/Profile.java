@@ -1,7 +1,6 @@
 package com.example.habbitamobile_nativo;
 
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.LinearLayout;
@@ -12,26 +11,24 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
 public class Profile extends BaseActivity {
 
     private TextView userName, userEmail;
     private LinearLayout menuPersonalInfo, menuEmailPassword, menuNotifications, menuHelp;
     private Button btnRegisterProperty, btnLogout;
-    private SharedPreferences preferences;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        // Inflar o layout específico no container
         getLayoutInflater().inflate(R.layout.activity_profile, findViewById(R.id.container));
 
         initViews();
         setupWindowInsets();
         loadUserData();
         setupListeners();
-
-        // Selecionar o item correto no menu
         setSelectedNavItem(R.id.navigation_profile);
     }
 
@@ -44,53 +41,39 @@ public class Profile extends BaseActivity {
         menuHelp = findViewById(R.id.menuHelp);
         btnRegisterProperty = findViewById(R.id.btnRegisterProperty);
         btnLogout = findViewById(R.id.btnLogout);
-
-        preferences = getSharedPreferences("HabittaPrefs", MODE_PRIVATE);
     }
 
     private void loadUserData() {
-        String email = preferences.getString("email", "");
-        String nome = preferences.getString("nome", "");
-        userEmail.setText(email.isEmpty() ? "sem email" : email);
-        userName.setText(nome.isEmpty() ? "Usuario" : nome);
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user != null) {
+            userEmail.setText(user.getEmail() != null ? user.getEmail() : "");
+            String nome = user.getDisplayName();
+            userName.setText(nome != null && !nome.isEmpty() ? nome : "Usuario");
+        }
     }
 
     private void setupListeners() {
-        menuPersonalInfo.setOnClickListener(v -> {
-            Toast.makeText(this, "Informações Pessoais", Toast.LENGTH_SHORT).show();
-        });
+        menuPersonalInfo.setOnClickListener(v ->
+                Toast.makeText(this, "Informacoes Pessoais", Toast.LENGTH_SHORT).show());
+        menuEmailPassword.setOnClickListener(v ->
+                Toast.makeText(this, "Alterar Email/Senha", Toast.LENGTH_SHORT).show());
+        menuNotifications.setOnClickListener(v ->
+                Toast.makeText(this, "Configuracoes de Notificacao", Toast.LENGTH_SHORT).show());
+        menuHelp.setOnClickListener(v ->
+                Toast.makeText(this, "Central de Ajuda", Toast.LENGTH_SHORT).show());
 
-        menuEmailPassword.setOnClickListener(v -> {
-            Toast.makeText(this, "Alterar Email/Senha", Toast.LENGTH_SHORT).show();
-        });
+        btnRegisterProperty.setOnClickListener(v ->
+                startActivity(new Intent(Profile.this, RegisterProperty.class)));
 
-        menuNotifications.setOnClickListener(v -> {
-            Toast.makeText(this, "Configurações de Notificação", Toast.LENGTH_SHORT).show();
-        });
-
-        menuHelp.setOnClickListener(v -> {
-            Toast.makeText(this, "Central de Ajuda", Toast.LENGTH_SHORT).show();
-        });
-
-        btnRegisterProperty.setOnClickListener(v -> {
-            startActivity(new Intent(Profile.this, RegisterProperty.class));
-        });
-
-        btnLogout.setOnClickListener(v -> {
-            realizarLogout();
-        });
+        btnLogout.setOnClickListener(v -> realizarLogout());
     }
 
     private void realizarLogout() {
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.clear();
-        editor.apply();
-
+        FirebaseAuth.getInstance().signOut();
         Intent intent = new Intent(Profile.this, MainActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();
-        Toast.makeText(this, "Logout realizado com sucesso", Toast.LENGTH_SHORT).show();
     }
 
     private void setupWindowInsets() {

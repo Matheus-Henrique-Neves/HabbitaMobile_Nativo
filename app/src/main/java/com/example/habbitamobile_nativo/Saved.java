@@ -1,6 +1,5 @@
 package com.example.habbitamobile_nativo;
 
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ProgressBar;
@@ -15,25 +14,18 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.habbitamobile_nativo.adapter.PropertyAdapter;
+import com.example.habbitamobile_nativo.api.ApiService;
 import com.example.habbitamobile_nativo.model.Property;
-import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.FieldPath;
-import com.google.firebase.firestore.FieldValue;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 
 public class Saved extends BaseActivity {
 
     private RecyclerView recyclerSaved;
     private ProgressBar progressBar;
     private TextView txtErro;
-    private FirebaseFirestore firestore;
     private PropertyAdapter adapter;
     private final HashSet<String> favoritados = new HashSet<>();
 
@@ -45,7 +37,6 @@ public class Saved extends BaseActivity {
         initViews();
         setupToolbar();
         setupWindowInsets();
-        initObjects();
         setSelectedNavItem(R.id.navigation_saved);
         carregarFavoritos();
     }
@@ -66,10 +57,6 @@ public class Saved extends BaseActivity {
         }
     }
 
-    private void initObjects() {
-        firestore = FirebaseFirestore.getInstance();
-    }
-
     private void setupWindowInsets() {
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -82,77 +69,73 @@ public class Saved extends BaseActivity {
         progressBar.setVisibility(View.VISIBLE);
         txtErro.setVisibility(View.GONE);
 
-        SharedPreferences prefs = getSharedPreferences("HabittaPrefs", MODE_PRIVATE);
-        String email = prefs.getString("email", "");
-
-        if (email.isEmpty()) {
-            mostrarVazio();
-            return;
-        }
-
-        firestore.collection("favorites").document(email).get()
-                .addOnSuccessListener(doc -> {
-                    if (!doc.exists()) {
-                        mostrarVazio();
-                        return;
-                    }
-                    List<?> ids = (List<?>) doc.get("propertyIds");
-                    if (ids == null || ids.isEmpty()) {
-                        mostrarVazio();
-                        return;
-                    }
-                    List<String> propertyIds = new ArrayList<>();
-                    for (Object id : ids) {
-                        if (id instanceof String) propertyIds.add((String) id);
-                    }
-                    favoritados.addAll(propertyIds);
-                    carregarPropriedades(propertyIds);
-                })
-                .addOnFailureListener(e -> {
+        ApiService.getInstance().buscarFavoritos(new ApiService.BuscarFavoritosCallback() {
+            @Override
+            public void onSucesso(List<String> ids) {
+                if (ids.isEmpty()) {
+                    runOnUiThread(() -> mostrarVazio());
+                    return;
+                }
+                favoritados.addAll(ids);
+                carregarPropriedades(ids);
+            }
+            @Override
+            public void onFalha(String mensagem) {
+                runOnUiThread(() -> {
                     progressBar.setVisibility(View.GONE);
-                    mostrarErro("Erro ao carregar favoritos: " + e.getMessage());
+                    mostrarErro("Erro ao carregar favoritos: " + mensagem);
                 });
+            }
+        });
     }
 
     private void carregarPropriedades(List<String> ids) {
-        firestore.collection("properties")
-                .whereIn(FieldPath.documentId(), ids)
-                .get()
-                .addOnSuccessListener(snapshot -> {
-                    progressBar.setVisibility(View.GONE);
-                    List<Property> properties = new ArrayList<>();
-                    for (QueryDocumentSnapshot doc : snapshot) {
-                        properties.add(documentParaProperty(doc));
+        List<Property> properties = new ArrayList<>();
+        List<String> idsList = new ArrayList<>(ids);
+        int[] concluidos = {0};
+
+        for (String id : idsList) {
+            ApiService.getInstance().buscarImovelPorId(id, new ApiService.BuscarImoveisCallback() {
+                @Override
+                public void onSucesso(List<Property> resultado) {
+                    if (!resultado.isEmpty()) properties.add(resultado.get(0));
+                    concluidos[0]++;
+                    if (concluidos[0] == idsList.size()) {
+                        runOnUiThread(() -> exibirPropriedades(properties));
                     }
-                    if (properties.isEmpty()) {
-                        mostrarVazio();
-                    } else {
-                        adapter = new PropertyAdapter(properties, favoritados, (propertyId, agoraFavoritado) -> {
-                            removerFavorito(propertyId);
-                            adapter.removerItem(propertyId);
-                            if (adapter.getItemCount() == 0) mostrarVazio();
-                        });
-                        recyclerSaved.setAdapter(adapter);
-                        recyclerSaved.setVisibility(View.VISIBLE);
+                }
+                @Override
+                public void onFalha(String mensagem) {
+                    concluidos[0]++;
+                    if (concluidos[0] == idsList.size()) {
+                        runOnUiThread(() -> exibirPropriedades(properties));
                     }
-                })
-                .addOnFailureListener(e -> {
-                    progressBar.setVisibility(View.GONE);
-                    mostrarErro("Erro ao carregar imoveis: " + e.getMessage());
-                });
+                }
+            });
+        }
     }
 
-    private void removerFavorito(String propertyId) {
-        SharedPreferences prefs = getSharedPreferences("HabittaPrefs", MODE_PRIVATE);
-        String email = prefs.getString("email", "");
-        if (email.isEmpty()) return;
-
-        DocumentReference docRef = firestore.collection("favorites").document(email);
-        Map<String, Object> data = new HashMap<>();
-        data.put("propertyIds", FieldValue.arrayRemove(propertyId));
-        docRef.update(data)
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Erro ao remover favorito", Toast.LENGTH_SHORT).show());
+    private void exibirPropriedades(List<Property> properties) {
+        progressBar.setVisibility(View.GONE);
+        if (properties.isEmpty()) {
+            mostrarVazio();
+            return;
+        }
+        adapter = new PropertyAdapter(properties, favoritados, (propertyId, agoraFavoritado) -> {
+            ApiService.getInstance().removerFavorito(propertyId, new ApiService.SimpleCallback() {
+                @Override public void onSucesso() {
+                    runOnUiThread(() -> {
+                        adapter.removerItem(propertyId);
+                        if (adapter.getItemCount() == 0) mostrarVazio();
+                    });
+                }
+                @Override public void onFalha(String m) {
+                    runOnUiThread(() -> Toast.makeText(Saved.this, "Erro ao remover favorito", Toast.LENGTH_SHORT).show());
+                }
+            });
+        });
+        recyclerSaved.setAdapter(adapter);
+        recyclerSaved.setVisibility(View.VISIBLE);
     }
 
     private void mostrarVazio() {
@@ -165,34 +148,6 @@ public class Saved extends BaseActivity {
     private void mostrarErro(String mensagem) {
         txtErro.setVisibility(View.VISIBLE);
         txtErro.setText(mensagem);
-    }
-
-    private Property documentParaProperty(QueryDocumentSnapshot doc) {
-        Property p = new Property();
-        p.setId(doc.getId());
-        p.setTitle(doc.getString("title"));
-        p.setImageUrl(doc.getString("image_url"));
-        p.setAddress(doc.getString("address"));
-        p.setDescription(doc.getString("description"));
-        p.setType(doc.getString("type"));
-        p.setTransactionType(doc.getString("transactionType"));
-
-        Double price = doc.getDouble("price");
-        p.setPrice(price != null ? price : 0);
-
-        Double area = doc.getDouble("area");
-        p.setArea(area != null ? area : 0);
-
-        Long bedrooms = doc.getLong("bedrooms");
-        p.setBedrooms(bedrooms != null ? bedrooms.intValue() : 0);
-
-        Long bathrooms = doc.getLong("bathrooms");
-        p.setBathrooms(bathrooms != null ? bathrooms.intValue() : 0);
-
-        Long garages = doc.getLong("garages");
-        p.setGarages(garages != null ? garages.intValue() : 0);
-
-        return p;
     }
 
     @Override

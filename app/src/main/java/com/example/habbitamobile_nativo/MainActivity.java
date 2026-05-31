@@ -1,7 +1,6 @@
 package com.example.habbitamobile_nativo;
 
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -15,7 +14,8 @@ import androidx.biometric.BiometricManager;
 import androidx.biometric.BiometricPrompt;
 import androidx.core.content.ContextCompat;
 
-import com.example.habbitamobile_nativo.dao.UsuarioDAO;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -23,19 +23,22 @@ public class MainActivity extends AppCompatActivity {
     private EditText edtEmail, edtSenha;
     private CheckBox checkBoxLembrar;
     private TextView lblMensagem;
-    private UsuarioDAO usuarioDAO;
-    private SharedPreferences preferences;
+    private FirebaseAuth auth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        auth = FirebaseAuth.getInstance();
+
         initViews();
-        initObjects();
-        loadSavedCredentials();
-        verificarBiometria();
         setupListeners();
+
+        FirebaseUser usuarioAtual = auth.getCurrentUser();
+        if (usuarioAtual != null) {
+            verificarBiometria();
+        }
     }
 
     private void initViews() {
@@ -48,28 +51,13 @@ public class MainActivity extends AppCompatActivity {
         lblMensagem = findViewById(R.id.lblMensagem);
     }
 
-    private void initObjects() {
-        usuarioDAO = new UsuarioDAO(this);
-        preferences = getSharedPreferences("HabittaPrefs", MODE_PRIVATE);
-    }
-
-    private void loadSavedCredentials() {
-        boolean lembrar = preferences.getBoolean("lembrar_me", false);
-        if (lembrar) {
-            String email = preferences.getString("email", "");
-            String senha = preferences.getString("senha", "");
-            edtEmail.setText(email);
-            edtSenha.setText(senha);
-            checkBoxLembrar.setChecked(true);
-        }
+    private void setupListeners() {
+        btnLogin.setOnClickListener(v -> realizarLogin());
+        btnTelaCadastro.setOnClickListener(v -> abrirTelaCadastro());
+        btnBiometria.setOnClickListener(v -> mostrarPromptBiometrico());
     }
 
     private void verificarBiometria() {
-        boolean temCredenciais = preferences.getBoolean("lembrar_me", false);
-        if (!temCredenciais) {
-            return;
-        }
-
         BiometricManager biometricManager = BiometricManager.from(this);
         int resultado = biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG);
 
@@ -127,71 +115,41 @@ public class MainActivity extends AppCompatActivity {
         biometricPrompt.authenticate(promptInfo);
     }
 
-    private void setupListeners() {
-        btnLogin.setOnClickListener(v -> realizarLogin());
-        btnTelaCadastro.setOnClickListener(v -> abrirTelaCadastro());
-        btnBiometria.setOnClickListener(v -> mostrarPromptBiometrico());
-    }
-
     private void realizarLogin() {
         String email = edtEmail.getText().toString().trim();
         String senha = edtSenha.getText().toString();
 
-        if (!validarCampos(email, senha)) {
-            return;
-        }
-
-        boolean loginValido = usuarioDAO.login(email, senha);
-
-        if (loginValido) {
-            String nome = usuarioDAO.buscarNome(email);
-            salvarPreferencias(email, senha, nome);
-            abrirTelaMenu();
-        } else {
-            lblMensagem.setText("Email ou senha invalidos");
-            edtEmail.requestFocus();
-        }
-    }
-
-    private boolean validarCampos(String email, String senha) {
         if (email.isEmpty()) {
             edtEmail.setError("Digite seu email");
             edtEmail.requestFocus();
-            return false;
+            return;
         }
-
         if (senha.isEmpty()) {
             edtSenha.setError("Digite sua senha");
             edtSenha.requestFocus();
-            return false;
+            return;
         }
 
-        return true;
+        lblMensagem.setText("");
+        btnLogin.setEnabled(false);
+
+        auth.signInWithEmailAndPassword(email, senha)
+                .addOnSuccessListener(result -> abrirTelaMenu())
+                .addOnFailureListener(e -> {
+                    btnLogin.setEnabled(true);
+                    lblMensagem.setText("Email ou senha invalidos");
+                    edtEmail.requestFocus();
+                });
     }
 
-    private void salvarPreferencias(String email, String senha, String nome) {
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putString("email", email);
-        editor.putString("nome", nome);
-        if (checkBoxLembrar.isChecked()) {
-            editor.putBoolean("lembrar_me", true);
-            editor.putString("senha", senha);
-        } else {
-            editor.putBoolean("lembrar_me", false);
-            editor.remove("senha");
-        }
-        editor.apply();
-    }
-
-    public void abrirTelaCadastro() {
-        Intent telaCadastro = new Intent(MainActivity.this, RegisterUser.class);
-        startActivity(telaCadastro);
+    private void abrirTelaCadastro() {
+        startActivity(new Intent(MainActivity.this, RegisterUser.class));
     }
 
     public void abrirTelaMenu() {
-        Intent telaMenu = new Intent(MainActivity.this, Home.class);
-        telaMenu.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(telaMenu);
+        Intent intent = new Intent(MainActivity.this, Home.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
         finish();
     }
 }

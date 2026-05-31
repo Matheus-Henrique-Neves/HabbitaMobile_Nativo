@@ -2,7 +2,6 @@ package com.example.habbitamobile_nativo;
 
 import android.Manifest;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
@@ -21,17 +20,19 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.habbitamobile_nativo.adapter.FotoAdapter;
+import com.example.habbitamobile_nativo.api.ApiService;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.textfield.TextInputEditText;
-import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -49,17 +50,12 @@ public class RegisterProperty extends AppCompatActivity {
     private final List<Uri> fotosSelecionadas = new ArrayList<>();
     private FotoAdapter fotoAdapter;
     private Uri cameraUri;
-
-    private FirebaseFirestore firestore;
     private FirebaseStorage storage;
 
     private final ActivityResultLauncher<String> solicitarPermissaoCamera =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), concedida -> {
-                if (concedida) {
-                    abrirCamera();
-                } else {
-                    mostrarErro("Permissao de camera negada. Habilite nas configuracoes do dispositivo.");
-                }
+                if (concedida) abrirCamera();
+                else mostrarErro("Permissao de camera negada.");
             });
 
     private final ActivityResultLauncher<Uri> tirarFoto =
@@ -73,17 +69,13 @@ public class RegisterProperty extends AppCompatActivity {
     private final ActivityResultLauncher<String[]> seletorGaleria =
             registerForActivityResult(new ActivityResultContracts.OpenMultipleDocuments(), uris -> {
                 if (uris == null || uris.isEmpty()) return;
-
                 int vagas = MAX_FOTOS - fotosSelecionadas.size();
                 int limite = Math.min(uris.size(), vagas);
-
                 for (int i = 0; i < limite; i++) {
                     Uri uri = uris.get(i);
-                    getContentResolver().takePersistableUriPermission(
-                            uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
                     fotosSelecionadas.add(uri);
                 }
-
                 fotoAdapter.notifyDataSetChanged();
             });
 
@@ -91,10 +83,19 @@ public class RegisterProperty extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register_property);
-
         initViews();
-        initObjects();
-        setupListeners();
+        storage = FirebaseStorage.getInstance();
+        fotoAdapter = new FotoAdapter(fotosSelecionadas, posicao -> {
+            fotosSelecionadas.remove(posicao);
+            fotoAdapter.notifyDataSetChanged();
+        });
+        recyclerFotos.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+        recyclerFotos.setAdapter(fotoAdapter);
+        btnAdicionarFotos.setOnClickListener(v -> {
+            if (fotosSelecionadas.size() >= MAX_FOTOS) { mostrarErro("Limite de " + MAX_FOTOS + " fotos atingido."); return; }
+            mostrarDialogFonte();
+        });
+        btnCadastrar.setOnClickListener(v -> validarECadastrar());
     }
 
     private void initViews() {
@@ -113,54 +114,22 @@ public class RegisterProperty extends AppCompatActivity {
         recyclerFotos = findViewById(R.id.recyclerFotos);
     }
 
-    private void initObjects() {
-        firestore = FirebaseFirestore.getInstance();
-        storage = FirebaseStorage.getInstance();
-
-        fotoAdapter = new FotoAdapter(fotosSelecionadas, posicao -> {
-            fotosSelecionadas.remove(posicao);
-            fotoAdapter.notifyDataSetChanged();
-        });
-
-        recyclerFotos.setLayoutManager(
-                new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
-        recyclerFotos.setAdapter(fotoAdapter);
-    }
-
-    private void setupListeners() {
-        btnAdicionarFotos.setOnClickListener(v -> {
-            if (fotosSelecionadas.size() >= MAX_FOTOS) {
-                mostrarErro("Limite de " + MAX_FOTOS + " fotos atingido.");
-                return;
-            }
-            mostrarDialogFonte();
-        });
-
-        btnCadastrar.setOnClickListener(v -> validarECadastrar());
-    }
-
     private void mostrarDialogFonte() {
-        new AlertDialog.Builder(this)
-                .setTitle("Adicionar foto")
+        new AlertDialog.Builder(this).setTitle("Adicionar foto")
                 .setItems(new String[]{"Tirar foto", "Escolher da galeria"}, (dialog, which) -> {
                     if (which == 0) {
-                        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-                                == PackageManager.PERMISSION_GRANTED) {
+                        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
                             abrirCamera();
-                        } else {
-                            solicitarPermissaoCamera.launch(Manifest.permission.CAMERA);
-                        }
+                        else solicitarPermissaoCamera.launch(Manifest.permission.CAMERA);
                     } else {
                         seletorGaleria.launch(new String[]{"image/*"});
                     }
-                })
-                .show();
+                }).show();
     }
 
     private void abrirCamera() {
         File arquivo = new File(getCacheDir(), "foto_" + UUID.randomUUID() + ".jpg");
-        cameraUri = FileProvider.getUriForFile(
-                this, getPackageName() + ".fileprovider", arquivo);
+        cameraUri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", arquivo);
         tirarFoto.launch(cameraUri);
     }
 
@@ -184,7 +153,6 @@ public class RegisterProperty extends AppCompatActivity {
         double preco;
         int quartos, banheiros, garagem;
         double area;
-
         try {
             preco = Double.parseDouble(precoStr.replace(",", "."));
             quartos = Integer.parseInt(quartosStr);
@@ -192,30 +160,25 @@ public class RegisterProperty extends AppCompatActivity {
             garagem = garagemStr.isEmpty() ? 0 : Integer.parseInt(garagemStr);
             area = areaStr.isEmpty() ? 0 : Double.parseDouble(areaStr.replace(",", "."));
         } catch (NumberFormatException e) {
-            mostrarErro("Valor numerico invalido.");
-            return;
+            mostrarErro("Valor numerico invalido."); return;
         }
 
         List<Integer> chipsSelecionados = chipGroupTransacao.getCheckedChipIds();
-        String transactionType = (!chipsSelecionados.isEmpty()
-                && chipsSelecionados.get(0) == R.id.chipAluguel) ? "rent" : "sell";
+        String transactionType = (!chipsSelecionados.isEmpty() && chipsSelecionados.get(0) == R.id.chipAluguel) ? "rent" : "sell";
 
         txtErro.setVisibility(View.GONE);
         btnCadastrar.setEnabled(false);
         btnCadastrar.setText("Cadastrando...");
 
         if (fotosSelecionadas.isEmpty()) {
-            salvarNoFirestore(titulo, endereco, preco, area, quartos, banheiros,
-                    garagem, descricao, transactionType, new ArrayList<>());
+            salvarNaApi(titulo, endereco, preco, area, quartos, banheiros, garagem, descricao, transactionType, new ArrayList<>());
         } else {
-            uploadFotosESalvar(titulo, endereco, preco, area, quartos, banheiros,
-                    garagem, descricao, transactionType);
+            uploadFotosESalvar(titulo, endereco, preco, area, quartos, banheiros, garagem, descricao, transactionType);
         }
     }
 
     private void uploadFotosESalvar(String titulo, String endereco, double preco, double area,
-                                     int quartos, int banheiros, int garagem,
-                                     String descricao, String transactionType) {
+                                     int quartos, int banheiros, int garagem, String descricao, String transactionType) {
         List<String> urlsFotos = new ArrayList<>();
         AtomicInteger contador = new AtomicInteger(0);
         int total = fotosSelecionadas.size();
@@ -223,19 +186,15 @@ public class RegisterProperty extends AppCompatActivity {
         for (Uri uri : fotosSelecionadas) {
             String nomeArquivo = "properties/" + titulo + "/" + UUID.randomUUID() + ".jpg";
             StorageReference ref = storage.getReference().child(nomeArquivo);
-
             ref.putFile(uri)
                     .continueWithTask(task -> {
-                        if (!task.isSuccessful() && task.getException() != null) {
-                            throw task.getException();
-                        }
+                        if (!task.isSuccessful() && task.getException() != null) throw task.getException();
                         return ref.getDownloadUrl();
                     })
                     .addOnSuccessListener(downloadUri -> {
                         urlsFotos.add(downloadUri.toString());
                         if (contador.incrementAndGet() == total) {
-                            salvarNoFirestore(titulo, endereco, preco, area, quartos,
-                                    banheiros, garagem, descricao, transactionType, urlsFotos);
+                            salvarNaApi(titulo, endereco, preco, area, quartos, banheiros, garagem, descricao, transactionType, urlsFotos);
                         }
                     })
                     .addOnFailureListener(e -> runOnUiThread(() -> {
@@ -246,39 +205,48 @@ public class RegisterProperty extends AppCompatActivity {
         }
     }
 
-    private void salvarNoFirestore(String titulo, String endereco, double preco, double area,
-                                    int quartos, int banheiros, int garagem,
-                                    String descricao, String transactionType,
-                                    @NonNull List<String> urlsFotos) {
-        SharedPreferences prefs = getSharedPreferences("HabittaPrefs", MODE_PRIVATE);
-        String emailUsuario = prefs.getString("email", "");
+    private void salvarNaApi(String titulo, String endereco, double preco, double area,
+                              int quartos, int banheiros, int garagem, String descricao,
+                              String transactionType, @NonNull List<String> urlsFotos) {
+        try {
+            JSONObject dados = new JSONObject();
+            dados.put("title", titulo);
+            dados.put("address", endereco);
+            dados.put("price", preco);
+            dados.put("area", area);
+            dados.put("bedrooms", quartos);
+            dados.put("bathrooms", banheiros);
+            dados.put("garages", garagem);
+            dados.put("description", descricao);
+            dados.put("transactionType", transactionType);
+            dados.put("image_url", urlsFotos.isEmpty() ? "" : urlsFotos.get(0));
+            dados.put("photos", new JSONArray(urlsFotos));
 
-        Map<String, Object> imovel = new HashMap<>();
-        imovel.put("title", titulo);
-        imovel.put("address", endereco);
-        imovel.put("price", preco);
-        imovel.put("area", area);
-        imovel.put("bedrooms", quartos);
-        imovel.put("bathrooms", banheiros);
-        imovel.put("garages", garagem);
-        imovel.put("description", descricao);
-        imovel.put("transactionType", transactionType);
-        imovel.put("photos", urlsFotos);
-        imovel.put("image_url", urlsFotos.isEmpty() ? "" : urlsFotos.get(0));
-        imovel.put("owner", emailUsuario);
-
-        firestore.collection("properties")
-                .add(imovel)
-                .addOnSuccessListener(ref -> runOnUiThread(() -> {
-                    btnCadastrar.setEnabled(true);
-                    btnCadastrar.setText("Cadastrar imovel");
-                    finish();
-                }))
-                .addOnFailureListener(e -> runOnUiThread(() -> {
-                    btnCadastrar.setEnabled(true);
-                    btnCadastrar.setText("Cadastrar imovel");
-                    mostrarErro("Falha ao salvar: " + e.getMessage());
-                }));
+            ApiService.getInstance().cadastrarImovel(dados, new ApiService.CadastrarCallback() {
+                @Override
+                public void onSucesso(String id) {
+                    runOnUiThread(() -> {
+                        btnCadastrar.setEnabled(true);
+                        btnCadastrar.setText("Cadastrar imovel");
+                        finish();
+                    });
+                }
+                @Override
+                public void onFalha(String mensagem) {
+                    runOnUiThread(() -> {
+                        btnCadastrar.setEnabled(true);
+                        btnCadastrar.setText("Cadastrar imovel");
+                        mostrarErro("Falha ao salvar: " + mensagem);
+                    });
+                }
+            });
+        } catch (JSONException e) {
+            runOnUiThread(() -> {
+                btnCadastrar.setEnabled(true);
+                btnCadastrar.setText("Cadastrar imovel");
+                mostrarErro("Erro interno ao montar dados.");
+            });
+        }
     }
 
     private void mostrarErro(String mensagem) {
