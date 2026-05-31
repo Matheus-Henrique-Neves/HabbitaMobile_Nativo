@@ -18,6 +18,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.habbitamobile_nativo.adapter.PropertyAdapter;
+import com.example.habbitamobile_nativo.api.ApiService;
 import com.example.habbitamobile_nativo.model.Property;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -35,6 +36,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Home extends BaseActivity {
 
@@ -45,6 +47,10 @@ public class Home extends BaseActivity {
     private FirebaseFirestore firestore;
     private FusedLocationProviderClient fusedLocationClient;
     private final HashSet<String> favoritados = new HashSet<>();
+
+    private final List<Property> propriedadesApi = new ArrayList<>();
+    private final List<Property> propriedadesFirestore = new ArrayList<>();
+    private final AtomicInteger fontesPendentes = new AtomicInteger(0);
 
     private final ActivityResultLauncher<String[]> solicitarPermissaoLocalizacao =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), resultado -> {
@@ -101,7 +107,6 @@ public class Home extends BaseActivity {
     @SuppressWarnings("MissingPermission")
     private void buscarLocalizacao() {
         CancellationTokenSource cts = new CancellationTokenSource();
-
         fusedLocationClient
                 .getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, cts.getToken())
                 .addOnSuccessListener(location -> {
@@ -111,8 +116,7 @@ public class Home extends BaseActivity {
                     }
                     reverterCoordenadas(location.getLatitude(), location.getLongitude());
                 })
-                .addOnFailureListener(e ->
-                        txtLocalizacao.setText("Erro ao obter localizacao"));
+                .addOnFailureListener(e -> txtLocalizacao.setText("Erro ao obter localizacao"));
     }
 
     private void reverterCoordenadas(double lat, double lng) {
@@ -120,7 +124,6 @@ public class Home extends BaseActivity {
             txtLocalizacao.setText(String.format(Locale.getDefault(), "%.4f, %.4f", lat, lng));
             return;
         }
-
         Geocoder geocoder = new Geocoder(this, Locale.getDefault());
         geocoder.getFromLocation(lat, lng, 1, new Geocoder.GeocodeListener() {
             @Override
@@ -172,29 +175,59 @@ public class Home extends BaseActivity {
     private void carregarImoveis() {
         progressBar.setVisibility(View.VISIBLE);
         txtErro.setVisibility(View.GONE);
+        propriedadesApi.clear();
+        propriedadesFirestore.clear();
+        fontesPendentes.set(2);
 
+        carregarDaApi();
+        carregarDoFirestore();
+    }
+
+    private void carregarDaApi() {
+        ApiService.getInstance().buscarImoveis(new ApiService.BuscarImoveisCallback() {
+            @Override
+            public void onSucesso(List<Property> properties) {
+                propriedadesApi.addAll(properties);
+                verificarConclusao();
+            }
+
+            @Override
+            public void onFalha(String mensagem) {
+                verificarConclusao();
+            }
+        });
+    }
+
+    private void carregarDoFirestore() {
         firestore.collection("properties")
                 .get()
                 .addOnSuccessListener(snapshot -> {
-                    List<Property> properties = new ArrayList<>();
                     for (QueryDocumentSnapshot doc : snapshot) {
-                        properties.add(documentParaProperty(doc));
+                        propriedadesFirestore.add(documentParaProperty(doc));
                     }
-
-                    progressBar.setVisibility(View.GONE);
-
-                    if (properties.isEmpty()) {
-                        txtErro.setVisibility(View.VISIBLE);
-                        txtErro.setText("Nenhum imovel cadastrado ainda.");
-                    } else {
-                        recyclerImoveis.setAdapter(new PropertyAdapter(properties, favoritados, this::toggleFavorito));
-                    }
+                    verificarConclusao();
                 })
-                .addOnFailureListener(e -> {
-                    progressBar.setVisibility(View.GONE);
-                    txtErro.setVisibility(View.VISIBLE);
-                    txtErro.setText("Erro ao carregar imoveis: " + e.getMessage());
-                });
+                .addOnFailureListener(e -> verificarConclusao());
+    }
+
+    private void verificarConclusao() {
+        if (fontesPendentes.decrementAndGet() == 0) {
+            runOnUiThread(this::exibirImoveis);
+        }
+    }
+
+    private void exibirImoveis() {
+        progressBar.setVisibility(View.GONE);
+        List<Property> todos = new ArrayList<>();
+        todos.addAll(propriedadesApi);
+        todos.addAll(propriedadesFirestore);
+
+        if (todos.isEmpty()) {
+            txtErro.setVisibility(View.VISIBLE);
+            txtErro.setText("Nenhum imovel disponivel.");
+        } else {
+            recyclerImoveis.setAdapter(new PropertyAdapter(todos, favoritados, this::toggleFavorito));
+        }
     }
 
     private void toggleFavorito(String propertyId, boolean agoraFavoritado) {

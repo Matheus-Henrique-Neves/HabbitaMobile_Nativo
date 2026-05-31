@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.habbitamobile_nativo.adapter.PropertyAdapter;
+import com.example.habbitamobile_nativo.api.ApiService;
 import com.example.habbitamobile_nativo.model.Property;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.textfield.TextInputEditText;
@@ -27,6 +28,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Explore extends BaseActivity {
 
@@ -39,6 +41,7 @@ public class Explore extends BaseActivity {
 
     private final List<Property> todasPropriedades = new ArrayList<>();
     private final HashSet<String> favoritados = new HashSet<>();
+    private final AtomicInteger fontesPendentes = new AtomicInteger(0);
     private String filtroTipo = "todos";
     private String termoBusca = "";
 
@@ -66,8 +69,7 @@ public class Explore extends BaseActivity {
         firestore = FirebaseFirestore.getInstance();
 
         edtBusca.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
@@ -75,8 +77,7 @@ public class Explore extends BaseActivity {
                 filtrarEAtualizar();
             }
 
-            @Override
-            public void afterTextChanged(Editable s) {}
+            @Override public void afterTextChanged(Editable s) {}
         });
 
         chipGroup.setOnCheckedStateChangeListener((group, checkedIds) -> {
@@ -120,22 +121,47 @@ public class Explore extends BaseActivity {
     private void carregarImoveis() {
         progressBar.setVisibility(View.VISIBLE);
         txtErro.setVisibility(View.GONE);
+        todasPropriedades.clear();
+        fontesPendentes.set(2);
 
+        carregarDaApi();
+        carregarDoFirestore();
+    }
+
+    private void carregarDaApi() {
+        ApiService.getInstance().buscarImoveis(new ApiService.BuscarImoveisCallback() {
+            @Override
+            public void onSucesso(List<Property> properties) {
+                todasPropriedades.addAll(properties);
+                verificarConclusao();
+            }
+
+            @Override
+            public void onFalha(String mensagem) {
+                verificarConclusao();
+            }
+        });
+    }
+
+    private void carregarDoFirestore() {
         firestore.collection("properties")
                 .get()
                 .addOnSuccessListener(snapshot -> {
-                    todasPropriedades.clear();
                     for (QueryDocumentSnapshot doc : snapshot) {
                         todasPropriedades.add(documentParaProperty(doc));
                     }
-                    progressBar.setVisibility(View.GONE);
-                    filtrarEAtualizar();
+                    verificarConclusao();
                 })
-                .addOnFailureListener(e -> {
-                    progressBar.setVisibility(View.GONE);
-                    txtErro.setVisibility(View.VISIBLE);
-                    txtErro.setText("Erro ao carregar imoveis: " + e.getMessage());
-                });
+                .addOnFailureListener(e -> verificarConclusao());
+    }
+
+    private void verificarConclusao() {
+        if (fontesPendentes.decrementAndGet() == 0) {
+            runOnUiThread(() -> {
+                progressBar.setVisibility(View.GONE);
+                filtrarEAtualizar();
+            });
+        }
     }
 
     private void filtrarEAtualizar() {
@@ -160,7 +186,7 @@ public class Explore extends BaseActivity {
             txtErro.setVisibility(View.VISIBLE);
             txtErro.setText("Nenhum imovel encontrado para essa busca.");
             recyclerExplore.setAdapter(null);
-        } else {
+        } else if (!filtradas.isEmpty()) {
             txtErro.setVisibility(View.GONE);
             recyclerExplore.setAdapter(new PropertyAdapter(filtradas, favoritados, this::toggleFavorito));
         }
