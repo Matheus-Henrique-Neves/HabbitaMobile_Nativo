@@ -96,6 +96,7 @@ public class PropertyAdapter extends RecyclerView.Adapter<PropertyAdapter.Proper
         private final TextView txtBathrooms;
         private final TextView txtGarages;
         private final TextView txtAddress;
+        private final TextView txtBadgeTipo;
 
         PropertyViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -107,6 +108,7 @@ public class PropertyAdapter extends RecyclerView.Adapter<PropertyAdapter.Proper
             txtBathrooms = itemView.findViewById(R.id.txtBathrooms);
             txtGarages = itemView.findViewById(R.id.txtGarages);
             txtAddress = itemView.findViewById(R.id.txtAddress);
+            txtBadgeTipo = itemView.findViewById(R.id.txtBadgeTipo);
         }
 
         void bind(Property property) {
@@ -120,6 +122,14 @@ public class PropertyAdapter extends RecyclerView.Adapter<PropertyAdapter.Proper
             txtBathrooms.setText(property.getBathrooms() + " banheiros");
             txtGarages.setText(property.getGarages() + " vagas");
             txtAddress.setText(property.getAddress());
+
+            String tipo = property.getTransactionType();
+            if (tipo != null && !tipo.isEmpty()) {
+                txtBadgeTipo.setVisibility(View.VISIBLE);
+                txtBadgeTipo.setText("rent".equalsIgnoreCase(tipo) ? "Aluguel" : "Venda");
+            } else {
+                txtBadgeTipo.setVisibility(View.GONE);
+            }
 
             if (property.getImageUrl() != null && !property.getImageUrl().isEmpty()) {
                 Glide.with(itemView.getContext())

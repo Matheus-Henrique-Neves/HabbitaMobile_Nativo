@@ -3,6 +3,7 @@ package com.example.habbitamobile_nativo;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -27,6 +28,7 @@ public class Saved extends BaseActivity {
     private RecyclerView recyclerSaved;
     private ProgressBar progressBar;
     private TextView txtErro;
+    private LinearLayout layoutVazio;
     private PropertyAdapter adapter;
     private final HashSet<String> favoritados = new HashSet<>();
 
@@ -46,6 +48,7 @@ public class Saved extends BaseActivity {
         recyclerSaved = findViewById(R.id.recyclerSaved);
         progressBar = findViewById(R.id.progressBar);
         txtErro = findViewById(R.id.txtErro);
+        layoutVazio = findViewById(R.id.layoutVazio);
         recyclerSaved.setLayoutManager(new LinearLayoutManager(this));
     }
 
@@ -148,12 +151,12 @@ public class Saved extends BaseActivity {
     private void mostrarVazio() {
         progressBar.setVisibility(View.GONE);
         recyclerSaved.setVisibility(View.GONE);
-        txtErro.setVisibility(View.VISIBLE);
-        txtErro.setText("Nenhum imovel salvo ainda.");
+        layoutVazio.setVisibility(View.VISIBLE);
     }
 
     private void mostrarErro(String mensagem) {
-        txtErro.setVisibility(View.VISIBLE);
+        progressBar.setVisibility(View.GONE);
+        layoutVazio.setVisibility(View.VISIBLE);
         txtErro.setText(mensagem);
     }
 

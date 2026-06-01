@@ -5,6 +5,8 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
+import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -16,6 +18,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.habbitamobile_nativo.adapter.PropertyAdapter;
 import com.example.habbitamobile_nativo.api.ApiService;
 import com.example.habbitamobile_nativo.model.Property;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.textfield.TextInputEditText;
@@ -34,6 +38,7 @@ public class Explore extends BaseActivity {
     private TextView txtErro;
     private TextInputEditText edtBusca;
     private ChipGroup chipGroup;
+    private ImageButton btnFiltros;
     private FloatingActionButton fabQrCode;
 
     private final List<Property> todasCarregadas = new ArrayList<>();
@@ -45,6 +50,11 @@ public class Explore extends BaseActivity {
     private boolean temMais = true;
     private String filtroTipo = "todos";
     private String termoBusca = "";
+
+    private double precoMin = 0;
+    private double precoMax = 0;
+    private int quartosMin = 0;
+    private int banheirosMin = 0;
 
     private final androidx.activity.result.ActivityResultLauncher<ScanOptions> scannerLauncher =
             registerForActivityResult(new ScanContract(), result -> {
@@ -69,6 +79,7 @@ public class Explore extends BaseActivity {
         txtErro = findViewById(R.id.txtErro);
         edtBusca = findViewById(R.id.edtBusca);
         chipGroup = findViewById(R.id.chipGroup);
+        btnFiltros = findViewById(R.id.btnFiltros);
         fabQrCode = findViewById(R.id.fabQrCode);
 
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
@@ -106,7 +117,92 @@ public class Explore extends BaseActivity {
             filtrarEAtualizar();
         });
 
+        btnFiltros.setOnClickListener(v -> abrirFiltros());
         fabQrCode.setOnClickListener(v -> abrirScanner());
+    }
+
+    private void abrirFiltros() {
+        BottomSheetDialog dialog = new BottomSheetDialog(this);
+        View view = getLayoutInflater().inflate(R.layout.bottom_sheet_filtros, null);
+        dialog.setContentView(view);
+
+        TextInputEditText edtPrecoMin = view.findViewById(R.id.edtPrecoMin);
+        TextInputEditText edtPrecoMax = view.findViewById(R.id.edtPrecoMax);
+        ChipGroup chipGroupQuartos = view.findViewById(R.id.chipGroupQuartos);
+        ChipGroup chipGroupBanheiros = view.findViewById(R.id.chipGroupBanheiros);
+        Button btnLimpar = view.findViewById(R.id.btnLimparFiltros);
+        Button btnAplicar = view.findViewById(R.id.btnAplicarFiltros);
+
+        if (precoMin > 0) edtPrecoMin.setText(String.valueOf((long) precoMin));
+        if (precoMax > 0) edtPrecoMax.setText(String.valueOf((long) precoMax));
+        marcarChipQuartos(chipGroupQuartos, quartosMin);
+        marcarChipBanheiros(chipGroupBanheiros, banheirosMin);
+
+        btnLimpar.setOnClickListener(v -> {
+            edtPrecoMin.setText("");
+            edtPrecoMax.setText("");
+            ((Chip) view.findViewById(R.id.chipQuartosQualquer)).setChecked(true);
+            ((Chip) view.findViewById(R.id.chipBanheirosQualquer)).setChecked(true);
+        });
+
+        btnAplicar.setOnClickListener(v -> {
+            precoMin = parseValor(edtPrecoMin);
+            precoMax = parseValor(edtPrecoMax);
+            quartosMin = lerChipQuartos(chipGroupQuartos);
+            banheirosMin = lerChipBanheiros(chipGroupBanheiros);
+            atualizarIndicadorFiltros();
+            filtrarEAtualizar();
+            dialog.dismiss();
+        });
+
+        dialog.show();
+    }
+
+    private void marcarChipQuartos(ChipGroup group, int valor) {
+        int id = valor == 1 ? R.id.chipQuartos1 : valor == 2 ? R.id.chipQuartos2
+                : valor == 3 ? R.id.chipQuartos3 : valor >= 4 ? R.id.chipQuartos4 : R.id.chipQuartosQualquer;
+        ((Chip) group.findViewById(id)).setChecked(true);
+    }
+
+    private void marcarChipBanheiros(ChipGroup group, int valor) {
+        int id = valor == 1 ? R.id.chipBanheiros1 : valor == 2 ? R.id.chipBanheiros2
+                : valor >= 3 ? R.id.chipBanheiros3 : R.id.chipBanheirosQualquer;
+        ((Chip) group.findViewById(id)).setChecked(true);
+    }
+
+    private int lerChipQuartos(ChipGroup group) {
+        int id = group.getCheckedChipId();
+        if (id == R.id.chipQuartos1) return 1;
+        if (id == R.id.chipQuartos2) return 2;
+        if (id == R.id.chipQuartos3) return 3;
+        if (id == R.id.chipQuartos4) return 4;
+        return 0;
+    }
+
+    private int lerChipBanheiros(ChipGroup group) {
+        int id = group.getCheckedChipId();
+        if (id == R.id.chipBanheiros1) return 1;
+        if (id == R.id.chipBanheiros2) return 2;
+        if (id == R.id.chipBanheiros3) return 3;
+        return 0;
+    }
+
+    private double parseValor(TextInputEditText campo) {
+        String texto = campo.getText() != null ? campo.getText().toString().trim() : "";
+        if (texto.isEmpty()) return 0;
+        try {
+            return Double.parseDouble(texto);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    private boolean temFiltrosAtivos() {
+        return precoMin > 0 || precoMax > 0 || quartosMin > 0 || banheirosMin > 0;
+    }
+
+    private void atualizarIndicadorFiltros() {
+        btnFiltros.setColorFilter(temFiltrosAtivos() ? 0xFF4CAF50 : 0xFFFFFFFF);
     }
 
     private void abrirScanner() {
@@ -207,13 +303,7 @@ public class Explore extends BaseActivity {
     private void filtrarEAtualizar() {
         List<Property> filtradas = new ArrayList<>();
         for (Property p : todasCarregadas) {
-            boolean passaTipo = filtroTipo.equals("todos")
-                    || (p.getTransactionType() != null && p.getTransactionType().equalsIgnoreCase(filtroTipo));
-            boolean passaBusca = termoBusca.isEmpty()
-                    || contemTermo(p.getTitle(), termoBusca)
-                    || contemTermo(p.getAddress(), termoBusca)
-                    || contemTermo(p.getDescription(), termoBusca);
-            if (passaTipo && passaBusca) filtradas.add(p);
+            if (passaFiltros(p)) filtradas.add(p);
         }
 
         if (filtradas.isEmpty() && !todasCarregadas.isEmpty()) {
@@ -223,16 +313,27 @@ public class Explore extends BaseActivity {
             adapter = null;
         } else if (!filtradas.isEmpty()) {
             txtErro.setVisibility(View.GONE);
-            if (adapter == null) {
-                adapter = new PropertyAdapter(filtradas, favoritados, this::toggleFavorito);
-                adapter.setOnPropertyClickListener(p -> abrirDetalhes(p));
-                recyclerExplore.setAdapter(adapter);
-            } else {
-                adapter = new PropertyAdapter(filtradas, favoritados, this::toggleFavorito);
-                adapter.setOnPropertyClickListener(p -> abrirDetalhes(p));
-                recyclerExplore.setAdapter(adapter);
-            }
+            adapter = new PropertyAdapter(filtradas, favoritados, this::toggleFavorito);
+            adapter.setOnPropertyClickListener(this::abrirDetalhes);
+            recyclerExplore.setAdapter(adapter);
         }
+    }
+
+    private boolean passaFiltros(Property p) {
+        boolean passaTipo = filtroTipo.equals("todos")
+                || (p.getTransactionType() != null && p.getTransactionType().equalsIgnoreCase(filtroTipo));
+
+        boolean passaBusca = termoBusca.isEmpty()
+                || contemTermo(p.getTitle(), termoBusca)
+                || contemTermo(p.getAddress(), termoBusca)
+                || contemTermo(p.getDescription(), termoBusca);
+
+        boolean passaPrecoMin = precoMin <= 0 || p.getPrice() >= precoMin;
+        boolean passaPrecoMax = precoMax <= 0 || p.getPrice() <= precoMax;
+        boolean passaQuartos = quartosMin <= 0 || p.getBedrooms() >= quartosMin;
+        boolean passaBanheiros = banheirosMin <= 0 || p.getBathrooms() >= banheirosMin;
+
+        return passaTipo && passaBusca && passaPrecoMin && passaPrecoMax && passaQuartos && passaBanheiros;
     }
 
     private void toggleFavorito(String propertyId, boolean agoraFavoritado) {

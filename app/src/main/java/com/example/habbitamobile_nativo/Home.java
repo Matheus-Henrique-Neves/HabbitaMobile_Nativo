@@ -21,6 +21,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.habbitamobile_nativo.adapter.PropertyAdapter;
 import com.example.habbitamobile_nativo.api.ApiService;
 import com.example.habbitamobile_nativo.model.Property;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
@@ -72,6 +74,16 @@ public class Home extends BaseActivity {
         progressBarMais = findViewById(R.id.progressBarMais);
         txtErro = findViewById(R.id.txtErro);
         txtLocalizacao = findViewById(R.id.txtLocalizacao);
+
+        TextView txtBoasVindas = findViewById(R.id.txtBoasVindas);
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user != null) {
+            String nome = user.getDisplayName();
+            if (nome != null && !nome.isEmpty()) {
+                String primeiroNome = nome.split(" ")[0];
+                txtBoasVindas.setText("Ola, " + primeiroNome + "!");
+            }
+        }
 
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         recyclerImoveis.setLayoutManager(layoutManager);

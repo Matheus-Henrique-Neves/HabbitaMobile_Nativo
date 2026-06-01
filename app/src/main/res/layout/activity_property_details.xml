@@ -1,61 +1,61 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F0F0F0">
+    android:orientation="vertical"
+    android:background="#FFFFFF">
 
-    <com.google.android.material.appbar.AppBarLayout
-        android:id="@+id/appBarLayout"
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="280dp"
-        android:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar">
+        android:layout_height="260dp">
 
-        <com.google.android.material.appbar.CollapsingToolbarLayout
+        <ImageView
+            android:id="@+id/imgDetalhes"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            app:layout_scrollFlags="scroll|exitUntilCollapsed"
-            app:contentScrim="#000000">
+            android:scaleType="centerCrop"
+            android:background="#BDBDBD" />
 
-            <ImageView
-                android:id="@+id/imgDetalhes"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:scaleType="centerCrop"
-                android:background="#222222"
-                app:layout_collapseMode="parallax" />
+        <ImageButton
+            android:id="@+id/btnVoltar"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="top|start"
+            android:layout_margin="16dp"
+            android:background="#88000000"
+            android:padding="8dp"
+            android:src="@drawable/ic_arrow_back"
+            android:contentDescription="Voltar" />
 
-            <androidx.appcompat.widget.Toolbar
-                android:id="@+id/toolbarDetalhes"
-                android:layout_width="match_parent"
-                android:layout_height="?attr/actionBarSize"
-                app:layout_collapseMode="pin"
-                app:navigationIcon="@drawable/ic_arrow_back" />
+        <TextView
+            android:id="@+id/chipTipoTransacao"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|start"
+            android:layout_margin="14dp"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="6dp"
+            android:textSize="12sp"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:background="@drawable/badge_tipo" />
 
-        </com.google.android.material.appbar.CollapsingToolbarLayout>
+    </FrameLayout>
 
-    </com.google.android.material.appbar.AppBarLayout>
-
-    <androidx.core.widget.NestedScrollView
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="#FFFFFF">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="20dp">
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chipTipoTransacao"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:textColor="#FFFFFF"
-                android:clickable="false"
-                android:focusable="false"
-                style="@style/Widget.MaterialComponents.Chip.Action" />
+            android:paddingHorizontal="20dp"
+            android:paddingTop="20dp"
+            android:paddingBottom="40dp">
 
             <TextView
                 android:id="@+id/txtDetalheTitulo"
@@ -63,22 +63,25 @@
                 android:layout_height="wrap_content"
                 android:textSize="22sp"
                 android:textStyle="bold"
-                android:layout_marginBottom="8dp" />
+                android:textColor="#111111"
+                android:layout_marginBottom="6dp" />
 
             <TextView
                 android:id="@+id/txtDetalhePreco"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textSize="24sp"
+                android:textSize="26sp"
                 android:textStyle="bold"
-                android:textColor="#000000"
-                android:layout_marginBottom="16dp" />
+                android:textColor="#111111"
+                android:layout_marginBottom="20dp" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginBottom="16dp">
+                android:background="@drawable/bg_stats_section"
+                android:paddingVertical="14dp"
+                android:layout_marginBottom="24dp">
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -86,19 +89,29 @@
                     android:layout_weight="1"
                     android:orientation="vertical"
                     android:gravity="center">
+
                     <TextView
                         android:id="@+id/txtDetalheQuartos"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textSize="18sp"
-                        android:textStyle="bold" />
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        android:textColor="#111111" />
+
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Quartos"
-                        android:textSize="12sp"
-                        android:textColor="#888888" />
+                        android:textSize="11sp"
+                        android:textColor="#999999" />
+
                 </LinearLayout>
+
+                <View
+                    android:layout_width="1dp"
+                    android:layout_height="36dp"
+                    android:layout_gravity="center_vertical"
+                    android:background="#DDDDDD" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -106,19 +119,29 @@
                     android:layout_weight="1"
                     android:orientation="vertical"
                     android:gravity="center">
+
                     <TextView
                         android:id="@+id/txtDetalheBanheiros"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textSize="18sp"
-                        android:textStyle="bold" />
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        android:textColor="#111111" />
+
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Banheiros"
-                        android:textSize="12sp"
-                        android:textColor="#888888" />
+                        android:textSize="11sp"
+                        android:textColor="#999999" />
+
                 </LinearLayout>
+
+                <View
+                    android:layout_width="1dp"
+                    android:layout_height="36dp"
+                    android:layout_gravity="center_vertical"
+                    android:background="#DDDDDD" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -126,19 +149,29 @@
                     android:layout_weight="1"
                     android:orientation="vertical"
                     android:gravity="center">
+
                     <TextView
                         android:id="@+id/txtDetalheVagas"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textSize="18sp"
-                        android:textStyle="bold" />
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        android:textColor="#111111" />
+
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Vagas"
-                        android:textSize="12sp"
-                        android:textColor="#888888" />
+                        android:textSize="11sp"
+                        android:textColor="#999999" />
+
                 </LinearLayout>
+
+                <View
+                    android:layout_width="1dp"
+                    android:layout_height="36dp"
+                    android:layout_gravity="center_vertical"
+                    android:background="#DDDDDD" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -146,34 +179,33 @@
                     android:layout_weight="1"
                     android:orientation="vertical"
                     android:gravity="center">
+
                     <TextView
                         android:id="@+id/txtDetalheArea"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textSize="18sp"
-                        android:textStyle="bold" />
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        android:textColor="#111111" />
+
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="m2"
-                        android:textSize="12sp"
-                        android:textColor="#888888" />
+                        android:textSize="11sp"
+                        android:textColor="#999999" />
+
                 </LinearLayout>
 
             </LinearLayout>
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="#E0E0E0"
-                android:layout_marginBottom="16dp" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Endereco"
-                android:textSize="13sp"
-                android:textColor="#888888"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="#AAAAAA"
                 android:layout_marginBottom="4dp" />
 
             <TextView
@@ -181,20 +213,23 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textSize="15sp"
-                android:layout_marginBottom="16dp" />
+                android:textColor="#222222"
+                android:lineSpacingExtra="2dp"
+                android:layout_marginBottom="20dp" />
 
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
-                android:background="#E0E0E0"
-                android:layout_marginBottom="16dp" />
+                android:background="#EEEEEE"
+                android:layout_marginBottom="20dp" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Descricao"
-                android:textSize="13sp"
-                android:textColor="#888888"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="#AAAAAA"
                 android:layout_marginBottom="4dp" />
 
             <TextView
@@ -202,11 +237,11 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textSize="15sp"
-                android:lineSpacingExtra="4dp"
-                android:layout_marginBottom="32dp" />
+                android:textColor="#333333"
+                android:lineSpacingExtra="6dp" />
 
         </LinearLayout>
 
-    </androidx.core.widget.NestedScrollView>
+    </ScrollView>
 
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+</LinearLayout>

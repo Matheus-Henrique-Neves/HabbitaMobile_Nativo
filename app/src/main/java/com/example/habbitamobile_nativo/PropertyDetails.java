@@ -1,15 +1,14 @@
 package com.example.habbitamobile_nativo;
 
 import android.os.Bundle;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
 
 import com.bumptech.glide.Glide;
 import com.example.habbitamobile_nativo.model.Property;
-import com.google.android.material.chip.Chip;
 
 import java.text.NumberFormat;
 import java.util.Locale;
@@ -29,19 +28,15 @@ public class PropertyDetails extends AppCompatActivity {
             return;
         }
 
-        Toolbar toolbar = findViewById(R.id.toolbarDetalhes);
-        setSupportActionBar(toolbar);
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            getSupportActionBar().setTitle("");
-        }
+        ImageButton btnVoltar = findViewById(R.id.btnVoltar);
+        btnVoltar.setOnClickListener(v -> onBackPressed());
 
         preencherDados(property);
     }
 
     private void preencherDados(Property p) {
         ImageView imgDetalhes = findViewById(R.id.imgDetalhes);
-        Chip chipTipo = findViewById(R.id.chipTipoTransacao);
+        TextView chipTipo = findViewById(R.id.chipTipoTransacao);
         TextView txtTitulo = findViewById(R.id.txtDetalheTitulo);
         TextView txtPreco = findViewById(R.id.txtDetalhePreco);
         TextView txtQuartos = findViewById(R.id.txtDetalheQuartos);
@@ -52,7 +47,7 @@ public class PropertyDetails extends AppCompatActivity {
         TextView txtDescricao = findViewById(R.id.txtDetalheDescricao);
 
         String fotoUrl = p.getImageUrl();
-        if (fotoUrl == null || fotoUrl.isEmpty() && p.getPhotos() != null && !p.getPhotos().isEmpty()) {
+        if ((fotoUrl == null || fotoUrl.isEmpty()) && p.getPhotos() != null && !p.getPhotos().isEmpty()) {
             fotoUrl = p.getPhotos().get(0);
         }
 
@@ -64,7 +59,6 @@ public class PropertyDetails extends AppCompatActivity {
 
         boolean isAluguel = "rent".equalsIgnoreCase(p.getTransactionType());
         chipTipo.setText(isAluguel ? "Aluguel" : "Venda");
-        chipTipo.setChipBackgroundColorResource(isAluguel ? android.R.color.holo_blue_dark : android.R.color.holo_green_dark);
 
         txtTitulo.setText(p.getTitle() != null ? p.getTitle() : "");
 
@@ -81,11 +75,5 @@ public class PropertyDetails extends AppCompatActivity {
         txtEndereco.setText(p.getAddress() != null ? p.getAddress() : "-");
         txtDescricao.setText(p.getDescription() != null && !p.getDescription().isEmpty()
                 ? p.getDescription() : "Sem descricao.");
-    }
-
-    @Override
-    public boolean onSupportNavigateUp() {
-        onBackPressed();
-        return true;
     }
 }

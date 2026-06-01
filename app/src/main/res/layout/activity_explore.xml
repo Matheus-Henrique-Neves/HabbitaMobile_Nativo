@@ -20,31 +20,51 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/layoutBusca"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+    <LinearLayout
+        android:id="@+id/linhaBusca"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
         android:layout_marginHorizontal="16dp"
         android:layout_marginTop="12dp"
-        android:hint="Buscar imoveis..."
-        app:boxCornerRadiusBottomEnd="12dp"
-        app:boxCornerRadiusBottomStart="12dp"
-        app:boxCornerRadiusTopEnd="12dp"
-        app:boxCornerRadiusTopStart="12dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/txtTituloExplore">
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/edtBusca"
-            android:layout_width="match_parent"
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/layoutBusca"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:inputType="text"
-            android:imeOptions="actionSearch"
-            android:maxLines="1" />
+            android:layout_weight="1"
+            android:layout_marginEnd="10dp"
+            android:hint="Buscar imoveis..."
+            app:boxCornerRadiusBottomEnd="12dp"
+            app:boxCornerRadiusBottomStart="12dp"
+            app:boxCornerRadiusTopEnd="12dp"
+            app:boxCornerRadiusTopStart="12dp">
 
-    </com.google.android.material.textfield.TextInputLayout>
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/edtBusca"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="text"
+                android:imeOptions="actionSearch"
+                android:maxLines="1" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <ImageButton
+            android:id="@+id/btnFiltros"
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            android:background="@drawable/bg_botao_filtro"
+            android:src="@drawable/ic_filter"
+            android:scaleType="centerInside"
+            android:contentDescription="Filtros" />
+
+    </LinearLayout>
 
     <com.google.android.material.chip.ChipGroup
         android:id="@+id/chipGroup"
@@ -54,7 +74,7 @@
         android:layout_marginTop="8dp"
         app:singleSelection="true"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/layoutBusca">
+        app:layout_constraintTop_toBottomOf="@+id/linhaBusca">
 
         <com.google.android.material.chip.Chip
             android:id="@+id/chipTodos"
