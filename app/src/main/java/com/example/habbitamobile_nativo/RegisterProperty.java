@@ -42,6 +42,7 @@ public class RegisterProperty extends AppCompatActivity {
 
     private TextInputEditText edtTitulo, edtEndereco, edtPreco, edtArea;
     private TextInputEditText edtQuartos, edtBanheiros, edtGaragem, edtDescricao;
+    private TextInputEditText edtContatoEmail, edtContatoTelefone;
     private ChipGroup chipGroupTransacao;
     private Button btnAdicionarFotos, btnCadastrar;
     private TextView txtErro;
@@ -51,6 +52,8 @@ public class RegisterProperty extends AppCompatActivity {
     private FotoAdapter fotoAdapter;
     private Uri cameraUri;
     private FirebaseStorage storage;
+    private String contatoEmail = "";
+    private String contatoTelefone = "";
 
     private final ActivityResultLauncher<String> solicitarPermissaoCamera =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), concedida -> {
@@ -107,6 +110,8 @@ public class RegisterProperty extends AppCompatActivity {
         edtBanheiros = findViewById(R.id.edtBanheiros);
         edtGaragem = findViewById(R.id.edtGaragem);
         edtDescricao = findViewById(R.id.edtDescricao);
+        edtContatoEmail = findViewById(R.id.edtContatoEmail);
+        edtContatoTelefone = findViewById(R.id.edtContatoTelefone);
         chipGroupTransacao = findViewById(R.id.chipGroupTransacao);
         btnAdicionarFotos = findViewById(R.id.btnAdicionarFotos);
         btnCadastrar = findViewById(R.id.btnCadastrar);
@@ -149,6 +154,18 @@ public class RegisterProperty extends AppCompatActivity {
         if (quartosStr.isEmpty()) { mostrarErro("Informe o numero de quartos."); return; }
         if (banheirosStr.isEmpty()) { mostrarErro("Informe o numero de banheiros."); return; }
         if (descricao.isEmpty()) { mostrarErro("Informe a descricao."); return; }
+
+        contatoEmail = getText(edtContatoEmail);
+        contatoTelefone = getText(edtContatoTelefone);
+
+        if (contatoEmail.isEmpty() && contatoTelefone.isEmpty()) {
+            mostrarErro("Informe ao menos um contato (email ou telefone).");
+            return;
+        }
+        if (!contatoEmail.isEmpty() && !android.util.Patterns.EMAIL_ADDRESS.matcher(contatoEmail).matches()) {
+            mostrarErro("Email de contato invalido.");
+            return;
+        }
 
         double preco;
         int quartos, banheiros, garagem;
@@ -221,6 +238,8 @@ public class RegisterProperty extends AppCompatActivity {
             dados.put("transactionType", transactionType);
             dados.put("image_url", urlsFotos.isEmpty() ? "" : urlsFotos.get(0));
             dados.put("photos", new JSONArray(urlsFotos));
+            dados.put("contactEmail", contatoEmail);
+            dados.put("contactPhone", contatoTelefone);
 
             ApiService.getInstance().cadastrarImovel(dados, new ApiService.CadastrarCallback() {
                 @Override

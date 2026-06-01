@@ -1,8 +1,12 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Base.Theme.HabbitaMobile_Nativo" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+    <style name="Base.Theme.HabbitaMobile_Nativo" parent="Theme.Material3.Light.NoActionBar">
+        <item name="android:textColor">#111111</item>
+        <item name="android:textColorHint">#888888</item>
+        <item name="colorOnSurface">#111111</item>
+        <item name="colorOnSurfaceVariant">#666666</item>
+        <item name="colorOutline">#999999</item>
+        <item name="android:windowLightStatusBar">true</item>
     </style>
 
     <style name="Theme.HabbitaMobile_Nativo" parent="Base.Theme.HabbitaMobile_Nativo" />

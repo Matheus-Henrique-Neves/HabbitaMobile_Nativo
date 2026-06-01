@@ -238,7 +238,69 @@
                 android:layout_height="wrap_content"
                 android:textSize="15sp"
                 android:textColor="#333333"
-                android:lineSpacingExtra="6dp" />
+                android:lineSpacingExtra="6dp"
+                android:layout_marginBottom="24dp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#EEEEEE"
+                android:layout_marginBottom="16dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Falar com o anunciante"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#333333"
+                android:layout_marginBottom="12dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnWhatsapp"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginBottom="10dp"
+                android:text="WhatsApp"
+                android:textAllCaps="false"
+                android:textSize="15sp"
+                android:backgroundTint="#25D366"
+                app:icon="@drawable/ic_chat"
+                app:iconGravity="textStart"
+                app:iconTint="#FFFFFF"
+                app:cornerRadius="10dp"
+                android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnLigar"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginBottom="10dp"
+                android:text="Ligar"
+                android:textAllCaps="false"
+                android:textSize="15sp"
+                android:backgroundTint="#111111"
+                app:icon="@drawable/ic_phone"
+                app:iconGravity="textStart"
+                app:iconTint="#FFFFFF"
+                app:cornerRadius="10dp"
+                android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnEmailContato"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:text="Enviar email"
+                android:textAllCaps="false"
+                android:textSize="15sp"
+                android:textColor="#111111"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                app:icon="@drawable/ic_email"
+                app:iconGravity="textStart"
+                app:iconTint="#111111"
+                app:strokeColor="#111111"
+                app:cornerRadius="10dp"
+                android:visibility="gone" />
 
         </LinearLayout>
 

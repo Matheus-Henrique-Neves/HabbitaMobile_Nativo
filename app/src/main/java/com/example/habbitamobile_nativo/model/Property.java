@@ -21,6 +21,8 @@ public class Property implements Serializable {
     private String transactionType;
     private double area;
     private List<String> photos = new ArrayList<>();
+    private String contactEmail;
+    private String contactPhone;
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
@@ -60,4 +62,10 @@ public class Property implements Serializable {
 
     public List<String> getPhotos() { return photos; }
     public void setPhotos(List<String> photos) { this.photos = photos != null ? photos : new ArrayList<>(); }
+
+    public String getContactEmail() { return contactEmail; }
+    public void setContactEmail(String contactEmail) { this.contactEmail = contactEmail; }
+
+    public String getContactPhone() { return contactPhone; }
+    public void setContactPhone(String contactPhone) { this.contactPhone = contactPhone; }
 }

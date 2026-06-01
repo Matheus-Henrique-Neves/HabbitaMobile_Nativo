@@ -290,6 +290,8 @@ public class ApiService {
         p.setBedrooms(obj.optInt("bedrooms", 0));
         p.setBathrooms(obj.optInt("bathrooms", 0));
         p.setGarages(obj.optInt("garages", 0));
+        p.setContactEmail(obj.optString("contactEmail", ""));
+        p.setContactPhone(obj.optString("contactPhone", ""));
 
         JSONArray photosArr = obj.optJSONArray("photos");
         if (photosArr != null) {
