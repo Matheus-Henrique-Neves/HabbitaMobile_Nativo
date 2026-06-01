@@ -175,6 +175,75 @@ public class ApiService {
         });
     }
 
+    public void buscarMeusImoveis(BuscarImoveisCallback callback) {
+        getToken(token -> {
+            if (token == null) {
+                callback.onFalha("Usuario nao autenticado");
+                return;
+            }
+            Request request = new Request.Builder()
+                    .url(BASE_URL + "/properties/mine")
+                    .addHeader("Authorization", "Bearer " + token)
+                    .build();
+
+            client.newCall(request).enqueue(new Callback() {
+                @Override
+                public void onFailure(Call call, IOException e) {
+                    callback.onFalha(e.getMessage() != null ? e.getMessage() : "Erro de conexao");
+                }
+
+                @Override
+                public void onResponse(Call call, Response response) throws IOException {
+                    if (!response.isSuccessful() || response.body() == null) {
+                        callback.onFalha("Erro " + response.code());
+                        return;
+                    }
+                    try {
+                        JSONObject obj = new JSONObject(response.body().string());
+                        JSONArray arr = obj.getJSONArray("properties");
+                        List<Property> properties = new ArrayList<>();
+                        for (int i = 0; i < arr.length(); i++) {
+                            properties.add(parsearImovel(arr.getJSONObject(i)));
+                        }
+                        callback.onSucesso(properties, false);
+                    } catch (JSONException e) {
+                        callback.onFalha("Erro ao processar resposta");
+                    }
+                }
+            });
+        });
+    }
+
+    public void excluirImovel(String id, SimpleCallback callback) {
+        getToken(token -> {
+            if (token == null) {
+                callback.onFalha("Usuario nao autenticado");
+                return;
+            }
+            Request request = new Request.Builder()
+                    .url(BASE_URL + "/properties/" + id)
+                    .addHeader("Authorization", "Bearer " + token)
+                    .delete()
+                    .build();
+
+            client.newCall(request).enqueue(new Callback() {
+                @Override
+                public void onFailure(Call call, IOException e) {
+                    callback.onFalha(e.getMessage() != null ? e.getMessage() : "Erro de conexao");
+                }
+
+                @Override
+                public void onResponse(Call call, Response response) {
+                    if (response.isSuccessful()) {
+                        callback.onSucesso();
+                    } else {
+                        callback.onFalha("Erro " + response.code());
+                    }
+                }
+            });
+        });
+    }
+
     public void editarImovel(String id, JSONObject dados, CadastrarCallback callback) {
         getToken(token -> {
             if (token == null) {

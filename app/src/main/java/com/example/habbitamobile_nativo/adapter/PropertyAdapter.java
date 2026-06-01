@@ -34,7 +34,12 @@ public class PropertyAdapter extends RecyclerView.Adapter<PropertyAdapter.Proper
         void onClick(Property property);
     }
 
+    public interface OnPropertyLongClickListener {
+        void onLongClick(Property property);
+    }
+
     private OnPropertyClickListener clickListener;
+    private OnPropertyLongClickListener longClickListener;
 
     public PropertyAdapter(List<Property> properties) {
         this.properties = new ArrayList<>(properties);
@@ -50,6 +55,10 @@ public class PropertyAdapter extends RecyclerView.Adapter<PropertyAdapter.Proper
 
     public void setOnPropertyClickListener(OnPropertyClickListener listener) {
         this.clickListener = listener;
+    }
+
+    public void setOnPropertyLongClickListener(OnPropertyLongClickListener listener) {
+        this.longClickListener = listener;
     }
 
     public void adicionarItens(List<Property> novos) {
@@ -114,6 +123,14 @@ public class PropertyAdapter extends RecyclerView.Adapter<PropertyAdapter.Proper
         void bind(Property property) {
             itemView.setOnClickListener(v -> {
                 if (clickListener != null) clickListener.onClick(property);
+            });
+
+            itemView.setOnLongClickListener(v -> {
+                if (longClickListener != null) {
+                    longClickListener.onLongClick(property);
+                    return true;
+                }
+                return false;
             });
 
             txtTitle.setText(property.getTitle());

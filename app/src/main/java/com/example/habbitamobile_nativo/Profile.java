@@ -5,7 +5,6 @@ import android.os.Bundle;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -17,7 +16,7 @@ import com.google.firebase.auth.FirebaseUser;
 public class Profile extends BaseActivity {
 
     private TextView userName, userEmail;
-    private LinearLayout menuPersonalInfo, menuEmailPassword, menuNotifications, menuHelp;
+    private LinearLayout menuMyProperties, menuPersonalInfo, menuEmailPassword, menuNotifications, menuHelp;
     private Button btnRegisterProperty, btnLogout;
 
     @Override
@@ -35,6 +34,7 @@ public class Profile extends BaseActivity {
     private void initViews() {
         userName = findViewById(R.id.userName);
         userEmail = findViewById(R.id.userEmail);
+        menuMyProperties = findViewById(R.id.menuMyProperties);
         menuPersonalInfo = findViewById(R.id.menuPersonalInfo);
         menuEmailPassword = findViewById(R.id.menuEmailPassword);
         menuNotifications = findViewById(R.id.menuNotifications);
@@ -53,14 +53,16 @@ public class Profile extends BaseActivity {
     }
 
     private void setupListeners() {
+        menuMyProperties.setOnClickListener(v ->
+                startActivity(new Intent(Profile.this, MyProperties.class)));
         menuPersonalInfo.setOnClickListener(v ->
-                Toast.makeText(this, "Informacoes Pessoais", Toast.LENGTH_SHORT).show());
+                startActivity(new Intent(Profile.this, PersonalInfo.class)));
         menuEmailPassword.setOnClickListener(v ->
-                Toast.makeText(this, "Alterar Email/Senha", Toast.LENGTH_SHORT).show());
+                startActivity(new Intent(Profile.this, EmailPassword.class)));
         menuNotifications.setOnClickListener(v ->
-                Toast.makeText(this, "Configuracoes de Notificacao", Toast.LENGTH_SHORT).show());
+                startActivity(new Intent(Profile.this, Notifications.class)));
         menuHelp.setOnClickListener(v ->
-                Toast.makeText(this, "Central de Ajuda", Toast.LENGTH_SHORT).show());
+                startActivity(new Intent(Profile.this, Help.class)));
 
         btnRegisterProperty.setOnClickListener(v ->
                 startActivity(new Intent(Profile.this, RegisterProperty.class)));

@@ -35,6 +35,11 @@
         <activity android:name=".Saved" />
         <activity android:name=".RegisterProperty" />
         <activity android:name=".PropertyDetails" />
+        <activity android:name=".MyProperties" />
+        <activity android:name=".PersonalInfo" />
+        <activity android:name=".EmailPassword" />
+        <activity android:name=".Notifications" />
+        <activity android:name=".Help" />
 
         <provider
             android:name="androidx.core.content.FileProvider"
