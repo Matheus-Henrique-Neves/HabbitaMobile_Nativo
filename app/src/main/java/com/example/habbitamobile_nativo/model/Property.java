@@ -23,6 +23,7 @@ public class Property implements Serializable {
     private List<String> photos = new ArrayList<>();
     private String contactEmail;
     private String contactPhone;
+    private String owner;
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
@@ -68,4 +69,7 @@ public class Property implements Serializable {
 
     public String getContactPhone() { return contactPhone; }
     public void setContactPhone(String contactPhone) { this.contactPhone = contactPhone; }
+
+    public String getOwner() { return owner; }
+    public void setOwner(String owner) { this.owner = owner; }
 }

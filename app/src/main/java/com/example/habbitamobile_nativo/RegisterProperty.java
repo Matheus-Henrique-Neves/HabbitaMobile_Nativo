@@ -21,6 +21,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.habbitamobile_nativo.adapter.FotoAdapter;
 import com.example.habbitamobile_nativo.api.ApiService;
+import com.example.habbitamobile_nativo.model.Property;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.storage.FirebaseStorage;
@@ -48,12 +49,16 @@ public class RegisterProperty extends AppCompatActivity {
     private TextView txtErro;
     private RecyclerView recyclerFotos;
 
+    public static final String EXTRA_PROPERTY_EDIT = "property_edit";
+
     private final List<Uri> fotosSelecionadas = new ArrayList<>();
+    private final List<String> fotosExistentes = new ArrayList<>();
     private FotoAdapter fotoAdapter;
     private Uri cameraUri;
     private FirebaseStorage storage;
     private String contatoEmail = "";
     private String contatoTelefone = "";
+    private String editId = null;
 
     private final ActivityResultLauncher<String> solicitarPermissaoCamera =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), concedida -> {
@@ -99,6 +104,39 @@ public class RegisterProperty extends AppCompatActivity {
             mostrarDialogFonte();
         });
         btnCadastrar.setOnClickListener(v -> validarECadastrar());
+        verificarModoEdicao();
+    }
+
+    private void verificarModoEdicao() {
+        Property p = (Property) getIntent().getSerializableExtra(EXTRA_PROPERTY_EDIT);
+        if (p == null) return;
+
+        editId = p.getId();
+
+        TextView txtTituloTela = findViewById(R.id.txtTituloTela);
+        txtTituloTela.setText("Editar Imovel");
+        btnCadastrar.setText("Salvar alteracoes");
+
+        edtTitulo.setText(p.getTitle());
+        edtEndereco.setText(p.getAddress());
+        edtPreco.setText(p.getPrice() > 0 ? String.valueOf((long) p.getPrice()) : "");
+        edtArea.setText(p.getArea() > 0 ? String.valueOf((long) p.getArea()) : "");
+        edtQuartos.setText(String.valueOf(p.getBedrooms()));
+        edtBanheiros.setText(String.valueOf(p.getBathrooms()));
+        edtGaragem.setText(String.valueOf(p.getGarages()));
+        edtDescricao.setText(p.getDescription());
+        edtContatoEmail.setText(p.getContactEmail());
+        edtContatoTelefone.setText(p.getContactPhone());
+
+        if ("rent".equalsIgnoreCase(p.getTransactionType())) {
+            chipGroupTransacao.check(R.id.chipAluguel);
+        } else {
+            chipGroupTransacao.check(R.id.chipVenda);
+        }
+
+        if (p.getPhotos() != null) {
+            fotosExistentes.addAll(p.getPhotos());
+        }
     }
 
     private void initViews() {
@@ -185,7 +223,7 @@ public class RegisterProperty extends AppCompatActivity {
 
         txtErro.setVisibility(View.GONE);
         btnCadastrar.setEnabled(false);
-        btnCadastrar.setText("Cadastrando...");
+        btnCadastrar.setText("Salvando...");
 
         if (fotosSelecionadas.isEmpty()) {
             salvarNaApi(titulo, endereco, preco, area, quartos, banheiros, garagem, descricao, transactionType, new ArrayList<>());
@@ -216,7 +254,7 @@ public class RegisterProperty extends AppCompatActivity {
                     })
                     .addOnFailureListener(e -> runOnUiThread(() -> {
                         btnCadastrar.setEnabled(true);
-                        btnCadastrar.setText("Cadastrar imovel");
+                        btnCadastrar.setText(textoBotao());
                         mostrarErro("Falha ao enviar foto: " + e.getMessage());
                     }));
         }
@@ -225,6 +263,9 @@ public class RegisterProperty extends AppCompatActivity {
     private void salvarNaApi(String titulo, String endereco, double preco, double area,
                               int quartos, int banheiros, int garagem, String descricao,
                               String transactionType, @NonNull List<String> urlsFotos) {
+        List<String> todasFotos = new ArrayList<>(fotosExistentes);
+        todasFotos.addAll(urlsFotos);
+
         try {
             JSONObject dados = new JSONObject();
             dados.put("title", titulo);
@@ -236,17 +277,17 @@ public class RegisterProperty extends AppCompatActivity {
             dados.put("garages", garagem);
             dados.put("description", descricao);
             dados.put("transactionType", transactionType);
-            dados.put("image_url", urlsFotos.isEmpty() ? "" : urlsFotos.get(0));
-            dados.put("photos", new JSONArray(urlsFotos));
+            dados.put("image_url", todasFotos.isEmpty() ? "" : todasFotos.get(0));
+            dados.put("photos", new JSONArray(todasFotos));
             dados.put("contactEmail", contatoEmail);
             dados.put("contactPhone", contatoTelefone);
 
-            ApiService.getInstance().cadastrarImovel(dados, new ApiService.CadastrarCallback() {
+            ApiService.CadastrarCallback callback = new ApiService.CadastrarCallback() {
                 @Override
                 public void onSucesso(String id) {
                     runOnUiThread(() -> {
                         btnCadastrar.setEnabled(true);
-                        btnCadastrar.setText("Cadastrar imovel");
+                        btnCadastrar.setText(textoBotao());
                         finish();
                     });
                 }
@@ -254,18 +295,28 @@ public class RegisterProperty extends AppCompatActivity {
                 public void onFalha(String mensagem) {
                     runOnUiThread(() -> {
                         btnCadastrar.setEnabled(true);
-                        btnCadastrar.setText("Cadastrar imovel");
+                        btnCadastrar.setText(textoBotao());
                         mostrarErro("Falha ao salvar: " + mensagem);
                     });
                 }
-            });
+            };
+
+            if (editId != null) {
+                ApiService.getInstance().editarImovel(editId, dados, callback);
+            } else {
+                ApiService.getInstance().cadastrarImovel(dados, callback);
+            }
         } catch (JSONException e) {
             runOnUiThread(() -> {
                 btnCadastrar.setEnabled(true);
-                btnCadastrar.setText("Cadastrar imovel");
+                btnCadastrar.setText(textoBotao());
                 mostrarErro("Erro interno ao montar dados.");
             });
         }
+    }
+
+    private String textoBotao() {
+        return editId != null ? "Salvar alteracoes" : "Cadastrar imovel";
     }
 
     private void mostrarErro(String mensagem) {

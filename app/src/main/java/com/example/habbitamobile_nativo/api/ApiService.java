@@ -175,6 +175,42 @@ public class ApiService {
         });
     }
 
+    public void editarImovel(String id, JSONObject dados, CadastrarCallback callback) {
+        getToken(token -> {
+            if (token == null) {
+                callback.onFalha("Usuario nao autenticado");
+                return;
+            }
+            RequestBody body = RequestBody.create(dados.toString(), JSON);
+            Request request = new Request.Builder()
+                    .url(BASE_URL + "/properties/" + id)
+                    .addHeader("Authorization", "Bearer " + token)
+                    .put(body)
+                    .build();
+
+            client.newCall(request).enqueue(new Callback() {
+                @Override
+                public void onFailure(Call call, IOException e) {
+                    callback.onFalha(e.getMessage() != null ? e.getMessage() : "Erro de conexao");
+                }
+
+                @Override
+                public void onResponse(Call call, Response response) throws IOException {
+                    if (!response.isSuccessful() || response.body() == null) {
+                        callback.onFalha("Erro " + response.code());
+                        return;
+                    }
+                    try {
+                        JSONObject obj = new JSONObject(response.body().string());
+                        callback.onSucesso(obj.optString("_id", ""));
+                    } catch (JSONException e) {
+                        callback.onFalha("Erro ao processar resposta");
+                    }
+                }
+            });
+        });
+    }
+
     public void buscarFavoritos(BuscarFavoritosCallback callback) {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null) {
@@ -292,6 +328,7 @@ public class ApiService {
         p.setGarages(obj.optInt("garages", 0));
         p.setContactEmail(obj.optString("contactEmail", ""));
         p.setContactPhone(obj.optString("contactPhone", ""));
+        p.setOwner(obj.optString("owner", ""));
 
         JSONArray photosArr = obj.optJSONArray("photos");
         if (photosArr != null) {

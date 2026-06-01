@@ -4,6 +4,7 @@ import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -12,22 +13,29 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.bumptech.glide.Glide;
+import com.example.habbitamobile_nativo.api.ApiService;
 import com.example.habbitamobile_nativo.model.Property;
 import com.google.android.material.button.MaterialButton;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import java.text.NumberFormat;
+import java.util.List;
 import java.util.Locale;
 
 public class PropertyDetails extends AppCompatActivity {
 
     public static final String EXTRA_PROPERTY = "property";
 
+    private Property property;
+    private boolean primeiraExibicao = true;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_property_details);
 
-        Property property = (Property) getIntent().getSerializableExtra(EXTRA_PROPERTY);
+        property = (Property) getIntent().getSerializableExtra(EXTRA_PROPERTY);
         if (property == null) {
             finish();
             return;
@@ -36,8 +44,40 @@ public class PropertyDetails extends AppCompatActivity {
         ImageButton btnVoltar = findViewById(R.id.btnVoltar);
         btnVoltar.setOnClickListener(v -> onBackPressed());
 
+        exibir();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (primeiraExibicao) {
+            primeiraExibicao = false;
+            return;
+        }
+        recarregar();
+    }
+
+    private void recarregar() {
+        if (property == null || property.getId() == null) return;
+        ApiService.getInstance().buscarImovelPorId(property.getId(), new ApiService.BuscarImoveisCallback() {
+            @Override
+            public void onSucesso(List<Property> properties, boolean hasMore) {
+                if (!properties.isEmpty()) {
+                    runOnUiThread(() -> {
+                        property = properties.get(0);
+                        exibir();
+                    });
+                }
+            }
+            @Override
+            public void onFalha(String mensagem) {}
+        });
+    }
+
+    private void exibir() {
         preencherDados(property);
         configurarContato(property);
+        configurarEdicao(property);
     }
 
     private void preencherDados(Property p) {
@@ -94,17 +134,39 @@ public class PropertyDetails extends AppCompatActivity {
 
         if (telefone != null && !telefone.isEmpty()) {
             String numeroLimpo = telefone.replaceAll("[^0-9]", "");
-
-            btnWhatsapp.setVisibility(android.view.View.VISIBLE);
+            btnWhatsapp.setVisibility(View.VISIBLE);
             btnWhatsapp.setOnClickListener(v -> abrirWhatsapp(numeroLimpo, titulo));
-
-            btnLigar.setVisibility(android.view.View.VISIBLE);
+            btnLigar.setVisibility(View.VISIBLE);
             btnLigar.setOnClickListener(v -> ligar(telefone));
+        } else {
+            btnWhatsapp.setVisibility(View.GONE);
+            btnLigar.setVisibility(View.GONE);
         }
 
         if (email != null && !email.isEmpty()) {
-            btnEmail.setVisibility(android.view.View.VISIBLE);
+            btnEmail.setVisibility(View.VISIBLE);
             btnEmail.setOnClickListener(v -> enviarEmail(email, titulo));
+        } else {
+            btnEmail.setVisibility(View.GONE);
+        }
+    }
+
+    private void configurarEdicao(Property p) {
+        ImageButton btnEditar = findViewById(R.id.btnEditar);
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+
+        boolean ehDono = user != null && p.getOwner() != null
+                && (p.getOwner().equalsIgnoreCase(user.getEmail()) || p.getOwner().equals(user.getUid()));
+
+        if (ehDono) {
+            btnEditar.setVisibility(View.VISIBLE);
+            btnEditar.setOnClickListener(v -> {
+                Intent intent = new Intent(PropertyDetails.this, RegisterProperty.class);
+                intent.putExtra(RegisterProperty.EXTRA_PROPERTY_EDIT, p);
+                startActivity(intent);
+            });
+        } else {
+            btnEditar.setVisibility(View.GONE);
         }
     }
 
@@ -112,8 +174,7 @@ public class PropertyDetails extends AppCompatActivity {
         try {
             String mensagem = "Ola! Tenho interesse no imovel: " + titulo;
             String url = "https://wa.me/" + numero + "?text=" + Uri.encode(mensagem);
-            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-            startActivity(intent);
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
         } catch (ActivityNotFoundException e) {
             Toast.makeText(this, "Nao foi possivel abrir o WhatsApp", Toast.LENGTH_SHORT).show();
         }
@@ -121,8 +182,7 @@ public class PropertyDetails extends AppCompatActivity {
 
     private void ligar(String telefone) {
         try {
-            Intent intent = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + telefone));
-            startActivity(intent);
+            startActivity(new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + telefone)));
         } catch (ActivityNotFoundException e) {
             Toast.makeText(this, "Nao foi possivel abrir o discador", Toast.LENGTH_SHORT).show();
         }
