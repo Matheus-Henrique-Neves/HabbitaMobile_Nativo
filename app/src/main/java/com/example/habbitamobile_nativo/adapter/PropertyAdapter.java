@@ -105,6 +105,7 @@ public class PropertyAdapter extends RecyclerView.Adapter<PropertyAdapter.Proper
         private final TextView txtBedrooms;
         private final TextView txtBathrooms;
         private final TextView txtGarages;
+        private final TextView txtArea;
         private final TextView txtAddress;
         private final TextView txtBadgeTipo;
 
@@ -117,6 +118,7 @@ public class PropertyAdapter extends RecyclerView.Adapter<PropertyAdapter.Proper
             txtBedrooms = itemView.findViewById(R.id.txtBedrooms);
             txtBathrooms = itemView.findViewById(R.id.txtBathrooms);
             txtGarages = itemView.findViewById(R.id.txtGarages);
+            txtArea = itemView.findViewById(R.id.txtArea);
             txtAddress = itemView.findViewById(R.id.txtAddress);
             txtBadgeTipo = itemView.findViewById(R.id.txtBadgeTipo);
         }
@@ -139,6 +141,12 @@ public class PropertyAdapter extends RecyclerView.Adapter<PropertyAdapter.Proper
             txtBedrooms.setText(String.valueOf(property.getBedrooms()));
             txtBathrooms.setText(String.valueOf(property.getBathrooms()));
             txtGarages.setText(String.valueOf(property.getGarages()));
+            if (property.getArea() > 0) {
+                txtArea.setVisibility(View.VISIBLE);
+                txtArea.setText((int) property.getArea() + " m²");
+            } else {
+                txtArea.setVisibility(View.GONE);
+            }
             txtAddress.setText(property.getAddress());
 
             String tipo = property.getTransactionType();

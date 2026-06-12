@@ -55,6 +55,9 @@ public class Explore extends BaseActivity {
     private double precoMax = 0;
     private int quartosMin = 0;
     private int banheirosMin = 0;
+    private int vagasMin = 0;
+    private double areaMin = 0;
+    private double areaMax = 0;
 
     private final androidx.activity.result.ActivityResultLauncher<ScanOptions> scannerLauncher =
             registerForActivityResult(new ScanContract(), result -> {
@@ -128,28 +131,40 @@ public class Explore extends BaseActivity {
 
         TextInputEditText edtPrecoMin = view.findViewById(R.id.edtPrecoMin);
         TextInputEditText edtPrecoMax = view.findViewById(R.id.edtPrecoMax);
+        TextInputEditText edtAreaMin = view.findViewById(R.id.edtAreaMin);
+        TextInputEditText edtAreaMax = view.findViewById(R.id.edtAreaMax);
         ChipGroup chipGroupQuartos = view.findViewById(R.id.chipGroupQuartos);
         ChipGroup chipGroupBanheiros = view.findViewById(R.id.chipGroupBanheiros);
+        ChipGroup chipGroupVagas = view.findViewById(R.id.chipGroupVagas);
         Button btnLimpar = view.findViewById(R.id.btnLimparFiltros);
         Button btnAplicar = view.findViewById(R.id.btnAplicarFiltros);
 
         if (precoMin > 0) edtPrecoMin.setText(String.valueOf((long) precoMin));
         if (precoMax > 0) edtPrecoMax.setText(String.valueOf((long) precoMax));
+        if (areaMin > 0) edtAreaMin.setText(String.valueOf((long) areaMin));
+        if (areaMax > 0) edtAreaMax.setText(String.valueOf((long) areaMax));
         marcarChipQuartos(chipGroupQuartos, quartosMin);
         marcarChipBanheiros(chipGroupBanheiros, banheirosMin);
+        marcarChipVagas(chipGroupVagas, vagasMin);
 
         btnLimpar.setOnClickListener(v -> {
             edtPrecoMin.setText("");
             edtPrecoMax.setText("");
+            edtAreaMin.setText("");
+            edtAreaMax.setText("");
             ((Chip) view.findViewById(R.id.chipQuartosQualquer)).setChecked(true);
             ((Chip) view.findViewById(R.id.chipBanheirosQualquer)).setChecked(true);
+            ((Chip) view.findViewById(R.id.chipVagasQualquer)).setChecked(true);
         });
 
         btnAplicar.setOnClickListener(v -> {
             precoMin = parseValor(edtPrecoMin);
             precoMax = parseValor(edtPrecoMax);
+            areaMin = parseValor(edtAreaMin);
+            areaMax = parseValor(edtAreaMax);
             quartosMin = lerChipQuartos(chipGroupQuartos);
             banheirosMin = lerChipBanheiros(chipGroupBanheiros);
+            vagasMin = lerChipVagas(chipGroupVagas);
             atualizarIndicadorFiltros();
             filtrarEAtualizar();
             dialog.dismiss();
@@ -187,6 +202,20 @@ public class Explore extends BaseActivity {
         return 0;
     }
 
+    private void marcarChipVagas(ChipGroup group, int valor) {
+        int id = valor == 1 ? R.id.chipVagas1 : valor == 2 ? R.id.chipVagas2
+                : valor >= 3 ? R.id.chipVagas3 : R.id.chipVagasQualquer;
+        ((Chip) group.findViewById(id)).setChecked(true);
+    }
+
+    private int lerChipVagas(ChipGroup group) {
+        int id = group.getCheckedChipId();
+        if (id == R.id.chipVagas1) return 1;
+        if (id == R.id.chipVagas2) return 2;
+        if (id == R.id.chipVagas3) return 3;
+        return 0;
+    }
+
     private double parseValor(TextInputEditText campo) {
         String texto = campo.getText() != null ? campo.getText().toString().trim() : "";
         if (texto.isEmpty()) return 0;
@@ -198,7 +227,8 @@ public class Explore extends BaseActivity {
     }
 
     private boolean temFiltrosAtivos() {
-        return precoMin > 0 || precoMax > 0 || quartosMin > 0 || banheirosMin > 0;
+        return precoMin > 0 || precoMax > 0 || quartosMin > 0 || banheirosMin > 0
+                || vagasMin > 0 || areaMin > 0 || areaMax > 0;
     }
 
     private void atualizarIndicadorFiltros() {
@@ -332,8 +362,12 @@ public class Explore extends BaseActivity {
         boolean passaPrecoMax = precoMax <= 0 || p.getPrice() <= precoMax;
         boolean passaQuartos = quartosMin <= 0 || p.getBedrooms() >= quartosMin;
         boolean passaBanheiros = banheirosMin <= 0 || p.getBathrooms() >= banheirosMin;
+        boolean passaVagas = vagasMin <= 0 || p.getGarages() >= vagasMin;
+        boolean passaAreaMin = areaMin <= 0 || p.getArea() >= areaMin;
+        boolean passaAreaMax = areaMax <= 0 || p.getArea() <= areaMax;
 
-        return passaTipo && passaBusca && passaPrecoMin && passaPrecoMax && passaQuartos && passaBanheiros;
+        return passaTipo && passaBusca && passaPrecoMin && passaPrecoMax && passaQuartos
+                && passaBanheiros && passaVagas && passaAreaMin && passaAreaMax;
     }
 
     private void toggleFavorito(String propertyId, boolean agoraFavoritado) {
