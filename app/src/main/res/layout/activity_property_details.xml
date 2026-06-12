@@ -23,17 +23,30 @@
             android:layout_height="40dp"
             android:layout_gravity="top|start"
             android:layout_margin="16dp"
-            android:background="#88000000"
+            android:background="@drawable/bg_botao_voltar"
             android:padding="8dp"
             android:src="@drawable/ic_arrow_back"
             android:contentDescription="Voltar" />
+
+        <ImageButton
+            android:id="@+id/btnFavoritarDetalhe"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="top|end"
+            android:layout_margin="16dp"
+            android:background="@drawable/bg_favorito"
+            android:padding="8dp"
+            android:src="@drawable/ic_heart_border"
+            android:contentDescription="Favoritar" />
 
         <ImageButton
             android:id="@+id/btnEditar"
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:layout_gravity="top|end"
-            android:layout_margin="16dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="16dp"
+            android:layout_marginEnd="64dp"
             android:background="#88000000"
             android:padding="8dp"
             android:src="@drawable/ic_edit"
@@ -110,12 +123,13 @@
                         android:textStyle="bold"
                         android:textColor="#111111" />
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Quartos"
-                        android:textSize="11sp"
-                        android:textColor="#999999" />
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginTop="3dp"
+                        android:src="@drawable/ic_bed"
+                        android:tint="#999999"
+                        android:contentDescription="Quartos" />
 
                 </LinearLayout>
 
@@ -140,12 +154,13 @@
                         android:textStyle="bold"
                         android:textColor="#111111" />
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Banheiros"
-                        android:textSize="11sp"
-                        android:textColor="#999999" />
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginTop="3dp"
+                        android:src="@drawable/ic_bathroom"
+                        android:tint="#999999"
+                        android:contentDescription="Banheiros" />
 
                 </LinearLayout>
 
@@ -170,12 +185,13 @@
                         android:textStyle="bold"
                         android:textColor="#111111" />
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Vagas"
-                        android:textSize="11sp"
-                        android:textColor="#999999" />
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginTop="3dp"
+                        android:src="@drawable/ic_car"
+                        android:tint="#999999"
+                        android:contentDescription="Vagas" />
 
                 </LinearLayout>
 

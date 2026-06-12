@@ -2,6 +2,7 @@ package com.example.habbitamobile_nativo;
 
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
@@ -29,6 +30,7 @@ public class PropertyDetails extends AppCompatActivity {
 
     private Property property;
     private boolean primeiraExibicao = true;
+    private boolean favoritado = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,6 +46,7 @@ public class PropertyDetails extends AppCompatActivity {
         ImageButton btnVoltar = findViewById(R.id.btnVoltar);
         btnVoltar.setOnClickListener(v -> onBackPressed());
 
+        configurarFavorito();
         exibir();
     }
 
@@ -105,6 +108,13 @@ public class PropertyDetails extends AppCompatActivity {
 
         boolean isAluguel = "rent".equalsIgnoreCase(p.getTransactionType());
         chipTipo.setText(isAluguel ? "Aluguel" : "Venda");
+        if (isAluguel) {
+            chipTipo.getBackground().mutate().setTint(Color.parseColor("#BBDEFB"));
+            chipTipo.setTextColor(Color.parseColor("#0D47A1"));
+        } else {
+            chipTipo.getBackground().mutate().setTint(Color.parseColor("#C8E6C9"));
+            chipTipo.setTextColor(Color.parseColor("#1B5E20"));
+        }
 
         txtTitulo.setText(p.getTitle() != null ? p.getTitle() : "");
 
@@ -121,6 +131,57 @@ public class PropertyDetails extends AppCompatActivity {
         txtEndereco.setText(p.getAddress() != null ? p.getAddress() : "-");
         txtDescricao.setText(p.getDescription() != null && !p.getDescription().isEmpty()
                 ? p.getDescription() : "Sem descricao.");
+    }
+
+    private void configurarFavorito() {
+        ImageButton btnFavoritar = findViewById(R.id.btnFavoritarDetalhe);
+
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) {
+            btnFavoritar.setVisibility(View.GONE);
+            return;
+        }
+        btnFavoritar.setVisibility(View.VISIBLE);
+
+        ApiService.getInstance().buscarFavoritos(new ApiService.BuscarFavoritosCallback() {
+            @Override
+            public void onSucesso(List<String> ids) {
+                favoritado = property != null && ids.contains(property.getId());
+                runOnUiThread(() -> atualizarIconeFavorito(btnFavoritar));
+            }
+            @Override
+            public void onFalha(String mensagem) {}
+        });
+
+        btnFavoritar.setOnClickListener(v -> {
+            if (property == null || property.getId() == null) return;
+            boolean novoEstado = !favoritado;
+            favoritado = novoEstado;
+            atualizarIconeFavorito(btnFavoritar);
+
+            ApiService.SimpleCallback callback = new ApiService.SimpleCallback() {
+                @Override
+                public void onSucesso() {}
+                @Override
+                public void onFalha(String mensagem) {
+                    runOnUiThread(() -> {
+                        favoritado = !novoEstado;
+                        atualizarIconeFavorito(btnFavoritar);
+                        Toast.makeText(PropertyDetails.this,
+                                "Nao foi possivel atualizar favoritos", Toast.LENGTH_SHORT).show();
+                    });
+                }
+            };
+
+            if (novoEstado) {
+                ApiService.getInstance().adicionarFavorito(property.getId(), callback);
+            } else {
+                ApiService.getInstance().removerFavorito(property.getId(), callback);
+            }
+        });
+    }
+
+    private void atualizarIconeFavorito(ImageButton btn) {
+        btn.setImageResource(favoritado ? R.drawable.ic_heart_filled : R.drawable.ic_heart_border);
     }
 
     private void configurarContato(Property p) {

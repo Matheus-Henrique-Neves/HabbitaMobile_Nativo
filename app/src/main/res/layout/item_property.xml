@@ -45,7 +45,7 @@
                 android:layout_height="40dp"
                 android:layout_gravity="top|end"
                 android:layout_margin="8dp"
-                android:background="#66000000"
+                android:background="@drawable/bg_favorito"
                 android:padding="6dp"
                 android:src="@drawable/ic_heart_border"
                 android:contentDescription="Favoritar" />
@@ -90,6 +90,9 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="16dp"
+                    android:gravity="center_vertical"
+                    android:drawableStart="@drawable/ic_bed"
+                    android:drawablePadding="4dp"
                     android:textSize="13sp"
                     android:textColor="#444444" />
 
@@ -98,6 +101,9 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="16dp"
+                    android:gravity="center_vertical"
+                    android:drawableStart="@drawable/ic_bathroom"
+                    android:drawablePadding="4dp"
                     android:textSize="13sp"
                     android:textColor="#444444" />
 
@@ -105,6 +111,9 @@
                     android:id="@+id/txtGarages"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:drawableStart="@drawable/ic_car"
+                    android:drawablePadding="4dp"
                     android:textSize="13sp"
                     android:textColor="#444444" />
 
