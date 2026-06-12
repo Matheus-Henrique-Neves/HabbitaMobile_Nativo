@@ -1,5 +1,6 @@
 package com.example.habbitamobile_nativo.adapter;
 
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -135,15 +136,23 @@ public class PropertyAdapter extends RecyclerView.Adapter<PropertyAdapter.Proper
 
             txtTitle.setText(property.getTitle());
             txtPrice.setText(formatarPreco(property.getPrice()));
-            txtBedrooms.setText(property.getBedrooms() + " quartos");
-            txtBathrooms.setText(property.getBathrooms() + " banheiros");
-            txtGarages.setText(property.getGarages() + " vagas");
+            txtBedrooms.setText(String.valueOf(property.getBedrooms()));
+            txtBathrooms.setText(String.valueOf(property.getBathrooms()));
+            txtGarages.setText(String.valueOf(property.getGarages()));
             txtAddress.setText(property.getAddress());
 
             String tipo = property.getTransactionType();
             if (tipo != null && !tipo.isEmpty()) {
+                boolean isAluguel = "rent".equalsIgnoreCase(tipo);
                 txtBadgeTipo.setVisibility(View.VISIBLE);
-                txtBadgeTipo.setText("rent".equalsIgnoreCase(tipo) ? "Aluguel" : "Venda");
+                txtBadgeTipo.setText(isAluguel ? "Aluguel" : "Venda");
+                if (isAluguel) {
+                    txtBadgeTipo.getBackground().mutate().setTint(Color.parseColor("#BBDEFB"));
+                    txtBadgeTipo.setTextColor(Color.parseColor("#0D47A1"));
+                } else {
+                    txtBadgeTipo.getBackground().mutate().setTint(Color.parseColor("#C8E6C9"));
+                    txtBadgeTipo.setTextColor(Color.parseColor("#1B5E20"));
+                }
             } else {
                 txtBadgeTipo.setVisibility(View.GONE);
             }
